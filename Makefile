@@ -25,7 +25,7 @@ clean:
 	rm -rf $(OBJDIR)/kernel8.img
 
 qemu: all
-	$(QEMU) -M raspi3b -kernel kernel8.img -display none
+	$(QEMU) -M raspi3b -kernel kernel8.img -display none -serial null -serial stdio
 
 debug: all
-	$(QEMU) -M raspi3b -kernel kernel8.img -display none -s -S
+	$(QEMU) -M raspi3b -kernel kernel8.img -display none -s -S -serial null -serial stdio

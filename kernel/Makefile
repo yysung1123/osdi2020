@@ -1,5 +1,7 @@
 KERN_OBJS = kernel/entry.o \
-	kernel/main.o
+	kernel/main.o \
+	kernel/mmio.o \
+	kernel/uart.o
 
 KERN_LDFLAGS = -T kernel/kern.ld
 
