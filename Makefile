@@ -6,7 +6,7 @@ LD	= aarch64-linux-gnu-ld
 OBJCOPY = aarch64-linux-gnu-objcopy
 QEMU = qemu-system-aarch64
 
-CFLAGS =
+CFLAGS = -Wall -fstrength-reduce -finline-functions -nostdinc -fno-builtin -fno-stack-protector
 
 # Add debug symbol
 CFLAGS += -g
@@ -22,6 +22,7 @@ all: kernel/kernel8.elf
 
 clean:
 	rm -rf $(OBJDIR)/kernel/*.o $(OBJDIR)/kernel/kernel8.*
+	rm -rf $(OBJDIR)/lib/*.o
 	rm -rf $(OBJDIR)/kernel8.img
 
 qemu: all

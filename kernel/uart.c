@@ -1,7 +1,8 @@
 #include <include/uart.h>
 #include <include/mmio.h>
+#include <include/types.h>
 
-int uart_read() {
+int32_t uart_read() {
     while (!(mmio_read(AUX_MU_LSR_REG) & 1)) {}
     return mmio_read(AUX_MU_IO_REG);
 }

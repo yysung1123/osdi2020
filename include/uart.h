@@ -1,5 +1,7 @@
 #pragma once
 
-int uart_read();
+#include <include/types.h>
+
+int32_t uart_read();
 void uart_write(char);
 void uart_init();
