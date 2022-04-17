@@ -2,6 +2,6 @@
 #include <include/shell.h>
 
 int main() {
-    uart_init();
+    mini_uart_init();
     do_shell();
 }

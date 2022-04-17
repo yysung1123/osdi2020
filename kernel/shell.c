@@ -14,9 +14,9 @@ void reset(uint32_t tick){ // reboot after watchdog timer expire
 }
 
 char getchar() {
-    char c = uart_read();
+    char c = mini_uart_read();
     if (c == '\r') c = '\n';
-    uart_write(c);
+    mini_uart_write(c);
 
     return c;
 }
@@ -33,7 +33,7 @@ void gets_s(char *buf, size_t len) {
 }
 
 void putchar(char c) {
-    uart_write(c);
+    mini_uart_write(c);
 }
 
 void puts(const char *buf) {
@@ -42,7 +42,7 @@ void puts(const char *buf) {
         putchar(buf[i++]);
     }
 
-    uart_write('\n');
+    mini_uart_write('\n');
 }
 
 void prompt() {
