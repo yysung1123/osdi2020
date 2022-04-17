@@ -12,6 +12,9 @@ ULIB = lib/printfmt.o \
 kernel/kernel8.elf: $(KERN_OBJS) $(ULIB)
 	$(LD) $(KERN_LDFLAGS) $(KERN_OBJS) $(ULIB) -o $@
 
+kernel/kernel8.%.elf: $(KERN_OBJS) $(ULIB)
+	$(LD) -Ttext=$* $(KERN_LDFLAGS) $(KERN_OBJS) $(ULIB) -o $@
+
 kernel/%.o: kernel/%.S
 	$(CC) $(CFLAGS) -c -o $@ $<
 

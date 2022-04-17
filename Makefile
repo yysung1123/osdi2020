@@ -20,10 +20,14 @@ include kernel/Makefile
 all: kernel/kernel8.elf
 	$(OBJCOPY) -O binary $< $(OBJDIR)/kernel8.img
 
+ADDR = 0x80000
+kernel_with_addr: kernel/kernel8.$(ADDR).elf
+	$(OBJCOPY) -O binary $< $(OBJDIR)/kernel8.$(ADDR).img
+
 clean:
 	rm -rf $(OBJDIR)/kernel/*.o $(OBJDIR)/kernel/kernel8.*
 	rm -rf $(OBJDIR)/lib/*.o
-	rm -rf $(OBJDIR)/kernel8.img
+	rm -rf $(OBJDIR)/kernel8*.img
 
 qemu: all
 	$(QEMU) -M raspi3b -kernel kernel8.img -display none -serial null -serial stdio
