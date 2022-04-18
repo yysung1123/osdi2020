@@ -1,12 +1,12 @@
 # Makefile for the simple kernel.
 .DEFAULT_GOAL := all
 
-CC	= aarch64-linux-gnu-gcc
-LD	= aarch64-linux-gnu-ld
+CC = aarch64-linux-gnu-gcc
+LD = aarch64-linux-gnu-ld
 OBJCOPY = aarch64-linux-gnu-objcopy
 QEMU = qemu-system-aarch64
 
-CFLAGS = -Wall -fstrength-reduce -finline-functions -nostdinc -fno-builtin -fno-stack-protector
+CFLAGS = -std=c17 -Wall -fstrength-reduce -finline-functions -nostdinc -fno-builtin -fno-stack-protector
 
 # Add debug symbol
 CFLAGS += -g
