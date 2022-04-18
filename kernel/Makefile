@@ -2,7 +2,8 @@ KERN_OBJS = kernel/entry.o \
 	kernel/main.o \
 	kernel/mmio.o \
 	kernel/uart.o \
-	kernel/shell.o
+	kernel/shell.o \
+	kernel/mbox.o
 
 KERN_LDFLAGS = -T kernel/kern.ld
 
