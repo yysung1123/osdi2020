@@ -22,3 +22,35 @@ void mini_uart_init() {
     mmio_write(AUX_MU_IIR_REG, 6);
     mmio_write(AUX_MU_CNTL_REG, 3);
 }
+
+char mini_uart_getchar() {
+    char c = mini_uart_read();
+    if (c == '\r') c = '\n';
+    mini_uart_write(c);
+
+    return c;
+}
+
+void mini_uart_gets_s(char *buf, size_t len) {
+    size_t idx = 0;
+    char c;
+
+    do {
+        c = mini_uart_getchar();
+        buf[idx++] = c;
+    } while (idx < len && c != '\n');
+    buf[idx - 1] = 0;
+}
+
+void mini_uart_putchar(char c) {
+    mini_uart_write(c);
+}
+
+void mini_uart_puts(const char *buf) {
+    ssize_t i = 0;
+    while (buf[i]) {
+        mini_uart_putchar(buf[i++]);
+    }
+
+    mini_uart_putchar('\n');
+}

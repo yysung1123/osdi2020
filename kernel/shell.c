@@ -4,6 +4,7 @@
 #include <include/string.h>
 #include <include/types.h>
 #include <include/mbox.h>
+#include <include/uart.h>
 
 #define PM_PASSWORD 0x5a000000
 #define PM_RSTC 0x3F10001c
@@ -14,41 +15,9 @@ void reset(uint32_t tick){ // reboot after watchdog timer expire
   mmio_write(PM_WDOG, PM_PASSWORD | tick); // number of watchdog tick
 }
 
-char getchar() {
-    char c = mini_uart_read();
-    if (c == '\r') c = '\n';
-    mini_uart_write(c);
-
-    return c;
-}
-
-void gets_s(char *buf, size_t len) {
-    size_t idx = 0;
-    char c;
-
-    do {
-        c = getchar();
-        buf[idx++] = c;
-    } while (idx < len && c != '\n');
-    buf[idx - 1] = 0;
-}
-
-void putchar(char c) {
-    mini_uart_write(c);
-}
-
-void puts(const char *buf) {
-    ssize_t i = 0;
-    while (buf[i]) {
-        putchar(buf[i++]);
-    }
-
-    mini_uart_write('\n');
-}
-
 void prompt() {
-    putchar('#');
-    putchar(' ');
+    mini_uart_putchar('#');
+    mini_uart_putchar(' ');
 }
 
 uint64_t read_frequency() {
@@ -83,34 +52,34 @@ void get_board_revision(){
 
     char outbuf[64];
     snprintf(outbuf, 64, "Board Revision: 0x%x", mailbox[5]); // it should be 0xa02082 for rpi3 b
-    puts(outbuf);
+    mini_uart_puts(outbuf);
 }
 
 void do_shell() {
     const size_t CMD_SIZE = 1024, OUTBUF_SIZE = 2048;
     char cmd[CMD_SIZE], outbuf[OUTBUF_SIZE];
-    puts("Welcome to NCTU OS");
+    mini_uart_puts("Welcome to NCTU OS");
     get_board_revision();
 
     while (1) {
         prompt();
-        gets_s(cmd, CMD_SIZE);
+        mini_uart_gets_s(cmd, CMD_SIZE);
         if (!strcmp(cmd, "hello")) {
-            puts("Hello World!");
+            mini_uart_puts("Hello World!");
         } else if (!strcmp(cmd, "help")) {
-            puts("hello : print Hello World!\nhelp : help\nreboot : reboot rpi3\ntimestamp : get current timestamp");
+            mini_uart_puts("hello : print Hello World!\nhelp : help\nreboot : reboot rpi3\ntimestamp : get current timestamp");
         } else if (!strcmp(cmd, "reboot")) {
-            puts("Reboot...");
+            mini_uart_puts("Reboot...");
             reset(0);
         } else if (!strcmp(cmd, "timestamp")) {
             uint64_t freq = read_frequency(), counts = read_counts();
             uint64_t integer_part = counts / freq;
             uint64_t decimal_part = (counts * 1000000 / freq) % 1000000;
             snprintf(outbuf, OUTBUF_SIZE, "[%d.%06d]", integer_part, decimal_part);
-            puts(outbuf);
+            mini_uart_puts(outbuf);
         } else {
             snprintf(outbuf, OUTBUF_SIZE, "Err: command %s not found, try <help>", cmd);
-            puts(outbuf);
+            mini_uart_puts(outbuf);
         }
     }
 }
