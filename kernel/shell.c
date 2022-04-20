@@ -1,10 +1,10 @@
 #include <include/shell.h>
 #include <include/mmio.h>
-#include <include/stdio.h>
 #include <include/string.h>
 #include <include/types.h>
 #include <include/mbox.h>
 #include <include/uart.h>
+#include <include/printk.h>
 
 #define PM_PASSWORD 0x5a000000
 #define PM_RSTC 0x3F10001c
@@ -16,8 +16,7 @@ void reset(uint32_t tick){ // reboot after watchdog timer expire
 }
 
 void prompt() {
-    pl011_uart_putchar('#');
-    pl011_uart_putchar(' ');
+    pl011_uart_printk("# ");
 }
 
 uint64_t read_frequency() {
@@ -50,14 +49,12 @@ void get_board_revision(){
 
     mailbox_call((uintptr_t)mailbox, 8);
 
-    char outbuf[64];
-    snprintf(outbuf, 64, "Board Revision: 0x%x", mailbox[5]); // it should be 0xa02082 for rpi3 b
-    pl011_uart_puts(outbuf);
+    pl011_uart_printk("Board Revision: 0x%x\n", mailbox[5]); // it should be 0xa02082 for rpi3 b
 }
 
 void do_shell() {
-    const size_t CMD_SIZE = 1024, OUTBUF_SIZE = 2048;
-    char cmd[CMD_SIZE], outbuf[OUTBUF_SIZE];
+    const size_t CMD_SIZE = 1024;
+    char cmd[CMD_SIZE];
     pl011_uart_puts("Welcome to NCTU OS");
     get_board_revision();
 
@@ -75,11 +72,9 @@ void do_shell() {
             uint64_t freq = read_frequency(), counts = read_counts();
             uint64_t integer_part = counts / freq;
             uint64_t decimal_part = (counts * 1000000 / freq) % 1000000;
-            snprintf(outbuf, OUTBUF_SIZE, "[%d.%06d]", integer_part, decimal_part);
-            pl011_uart_puts(outbuf);
+            pl011_uart_printk("[%lld.%06lld]\n", integer_part, decimal_part);
         } else {
-            snprintf(outbuf, OUTBUF_SIZE, "Err: command %s not found, try <help>", cmd);
-            pl011_uart_puts(outbuf);
+            pl011_uart_printk("Err: command %s not found, try <help>\n", cmd);
         }
     }
 }
