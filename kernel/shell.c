@@ -16,8 +16,8 @@ void reset(uint32_t tick){ // reboot after watchdog timer expire
 }
 
 void prompt() {
-    mini_uart_putchar('#');
-    mini_uart_putchar(' ');
+    pl011_uart_putchar('#');
+    pl011_uart_putchar(' ');
 }
 
 uint64_t read_frequency() {
@@ -52,34 +52,34 @@ void get_board_revision(){
 
     char outbuf[64];
     snprintf(outbuf, 64, "Board Revision: 0x%x", mailbox[5]); // it should be 0xa02082 for rpi3 b
-    mini_uart_puts(outbuf);
+    pl011_uart_puts(outbuf);
 }
 
 void do_shell() {
     const size_t CMD_SIZE = 1024, OUTBUF_SIZE = 2048;
     char cmd[CMD_SIZE], outbuf[OUTBUF_SIZE];
-    mini_uart_puts("Welcome to NCTU OS");
+    pl011_uart_puts("Welcome to NCTU OS");
     get_board_revision();
 
     while (1) {
         prompt();
-        mini_uart_gets_s(cmd, CMD_SIZE);
+        pl011_uart_gets_s(cmd, CMD_SIZE);
         if (!strcmp(cmd, "hello")) {
-            mini_uart_puts("Hello World!");
+            pl011_uart_puts("Hello World!");
         } else if (!strcmp(cmd, "help")) {
-            mini_uart_puts("hello : print Hello World!\nhelp : help\nreboot : reboot rpi3\ntimestamp : get current timestamp");
+            pl011_uart_puts("hello : print Hello World!\nhelp : help\nreboot : reboot rpi3\ntimestamp : get current timestamp");
         } else if (!strcmp(cmd, "reboot")) {
-            mini_uart_puts("Reboot...");
+            pl011_uart_puts("Reboot...");
             reset(0);
         } else if (!strcmp(cmd, "timestamp")) {
             uint64_t freq = read_frequency(), counts = read_counts();
             uint64_t integer_part = counts / freq;
             uint64_t decimal_part = (counts * 1000000 / freq) % 1000000;
             snprintf(outbuf, OUTBUF_SIZE, "[%d.%06d]", integer_part, decimal_part);
-            mini_uart_puts(outbuf);
+            pl011_uart_puts(outbuf);
         } else {
             snprintf(outbuf, OUTBUF_SIZE, "Err: command %s not found, try <help>", cmd);
-            mini_uart_puts(outbuf);
+            pl011_uart_puts(outbuf);
         }
     }
 }
