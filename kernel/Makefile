@@ -4,7 +4,9 @@ KERN_OBJS = kernel/entry.o \
 	kernel/uart.o \
 	kernel/shell.o \
 	kernel/mbox.o \
-	kernel/printk.o
+	kernel/printk.o \
+	kernel/fb.o \
+	kernel/splash.o
 
 KERN_LDFLAGS = -T kernel/kern.ld
 
