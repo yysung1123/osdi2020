@@ -1,7 +1,11 @@
 SECTIONS
 {
   . = 0x80000;
-  .text : { *(.text.entry) }
+  .text : {
+    _KERNEL_START = .;
+    *(.text.entry)
+    *(.text .text.*)
+  }
 
   .bss : {
     . = ALIGN(16);
@@ -9,4 +13,7 @@ SECTIONS
     *(.bss .bss.*)
     _BSS_END = .;
   }
+  _KERNEL_END = .;
 }
+
+_KERNEL_SIZE = _KERNEL_END - _KERNEL_START;

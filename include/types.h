@@ -42,14 +42,14 @@ typedef int64_t off_t;
 // Efficient min and max operations
 #define MIN(_a, _b)						\
   ({								\
-   typeof(_a) __a = (_a);					\
-   typeof(_b) __b = (_b);					\
+   __typeof__(_a) __a = (_a);					\
+   __typeof__(_b) __b = (_b);					\
    __a <= __b ? __a : __b;					\
    })
 #define MAX(_a, _b)						\
   ({								\
-   typeof(_a) __a = (_a);					\
-   typeof(_b) __b = (_b);					\
+   __typeof__(_a) __a = (_a);					\
+   __typeof__(_b) __b = (_b);					\
    __a >= __b ? __a : __b;					\
    })
 
@@ -58,13 +58,13 @@ typedef int64_t off_t;
 #define ROUNDDOWN(a, n)						\
   ({								\
    uint64_t __a = (uint64_t) (a);				\
-   (typeof(a)) (__a - __a % (n));				\
+   (__typeof__(a)) (__a - __a % (n));				\
    })
 // Round up to the nearest multiple of n
 #define ROUNDUP(a, n)						\
   ({								\
    uint64_t __n = (uint64_t) (n);				\
-   (typeof(a)) (ROUNDDOWN((uint64_t) (a) + __n - 1, __n));	\
+   (__typeof__(a)) (ROUNDDOWN((uint64_t) (a) + __n - 1, __n));	\
    })
 
 // Return the offset of 'member' relative to the beginning of a struct type

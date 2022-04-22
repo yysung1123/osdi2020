@@ -6,7 +6,7 @@ LD = aarch64-linux-gnu-ld
 OBJCOPY = aarch64-linux-gnu-objcopy
 QEMU = qemu-system-aarch64
 
-CFLAGS = -std=c17 -Wall -fstrength-reduce -finline-functions -nostdinc -fno-builtin -fno-stack-protector
+CFLAGS = -mcpu=cortex-a53+crc -std=c17 -O3 -fno-align-functions -Wall -fstrength-reduce -finline-functions -nostdinc -fno-builtin -fno-stack-protector
 
 # Add debug symbol
 CFLAGS += -g
