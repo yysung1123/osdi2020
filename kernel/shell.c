@@ -145,7 +145,7 @@ void loadimg() {
     uint32_t checksum = crc32(0, (uint8_t *)tmp_image_addr, image_size);
 
     if (input_checksum != checksum) {
-        pl011_uart_printk("Checksum failed\nInput: %x\nReceive: %x\n", input_checksum, checksum);
+        pl011_uart_printk("Checksum mismatch\nExpected: %x\nReceived: %x\n", input_checksum, checksum);
         return;
     }
 
