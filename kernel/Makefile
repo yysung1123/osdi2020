@@ -28,3 +28,6 @@ kernel/%.o: kernel/%.S
 
 kernel/%.o: kernel/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+lib/%.o: lib/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
