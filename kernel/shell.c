@@ -11,8 +11,8 @@
 #define PM_WDOG 0x3F100024
 
 void reset(uint32_t tick){ // reboot after watchdog timer expire
-  mmio_write(PM_RSTC, PM_PASSWORD | 0x20); // full reset
-  mmio_write(PM_WDOG, PM_PASSWORD | tick); // number of watchdog tick
+    mmio_write(PM_RSTC, PM_PASSWORD | 0x20); // full reset
+    mmio_write(PM_WDOG, PM_PASSWORD | tick); // number of watchdog tick
 }
 
 void prompt() {
@@ -35,7 +35,7 @@ uint64_t read_counts() {
     return res;
 }
 
-void get_board_revision(){
+void get_board_revision() {
     uint32_t mailbox[7] __attribute__((aligned(16)));
     mailbox[0] = 7 * 4; // buffer size in bytes
     mailbox[1] = REQUEST_CODE;
@@ -50,6 +50,24 @@ void get_board_revision(){
     mailbox_call((uintptr_t)mailbox, 8);
 
     pl011_uart_printk("Board Revision: 0x%x\n", mailbox[5]); // it should be 0xa02082 for rpi3 b
+}
+
+void get_vc_base_address() {
+    uint32_t mailbox[8] __attribute__((aligned(16)));
+    mailbox[0] = 8 * 4; // buffer size in bytes
+    mailbox[1] = REQUEST_CODE;
+    // tags begin
+    mailbox[2] = GET_VC_MEMORY; // tag identifier
+    mailbox[3] = 2 * 4; // maximum of request and response value buffer's length.
+    mailbox[4] = TAG_REQUEST_CODE;
+    mailbox[5] = 0; // response: base address
+    mailbox[6] = 0; // response: size
+    // tags end
+    mailbox[7] = END_TAG;
+
+    mailbox_call((uintptr_t)mailbox, 8);
+
+    pl011_uart_printk("VC base address: 0x%x\n", mailbox[5]);
 }
 
 uint32_t getuint32_be() {
@@ -170,6 +188,7 @@ void do_shell() {
     pl011_uart_puts("Welcome to NCTU OS");
     pl011_uart_printk("Kernel start address: 0x%016x\n", &_KERNEL_START);
     get_board_revision();
+    get_vc_base_address();
 
     while (1) {
         prompt();
