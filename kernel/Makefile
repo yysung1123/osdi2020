@@ -5,8 +5,12 @@ KERN_OBJS = kernel/entry.o \
 	kernel/shell.o \
 	kernel/mbox.o \
 	kernel/printk.o \
-	kernel/fb.o \
-	kernel/splash.o
+	kernel/fb.o
+
+ifeq ($(WITH_BMP_SPLASH),1)
+	KERN_OBJS += kernel/splash.o
+	CFLAGS += -DWITH_BMP_SPLASH
+endif
 
 KERN_LDFLAGS = -T kernel/kern.ld
 

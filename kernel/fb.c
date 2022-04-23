@@ -55,6 +55,7 @@ void fb_init() {
     }
 }
 
+#ifdef WITH_BMP_SPLASH
 void fb_show_splash_image() {
     uint8_t (*img)[480][640][3] = (uint8_t (*)[480][640][3])framebuffer;
     extern const uint8_t *splash_image_end;
@@ -68,3 +69,15 @@ void fb_show_splash_image() {
         }
     }
 }
+#else
+void fb_show_splash_image() {
+    uint8_t (*img)[480][640][3] = (uint8_t (*)[480][640][3])framebuffer;
+
+    for (int i = 0; i < 480; ++i) {
+        for (int j = 0; j < 640; ++j) {
+            uint8_t value = (((i / 20) + (j / 20)) % 2) ? 0 : 0xff;
+            (*img)[i][j][0] = (*img)[i][j][1] = (*img)[i][j][2] = value;
+        }
+    }
+}
+#endif

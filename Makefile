@@ -15,6 +15,8 @@ CFLAGS += -I.
 
 OBJDIR = .
 
+WITH_BMP_SPLASH=0
+
 include kernel/Makefile
 
 all: kernel/kernel8.elf
