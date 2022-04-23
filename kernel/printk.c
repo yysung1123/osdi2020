@@ -2,6 +2,7 @@
 #include <include/uart.h>
 #include <include/stdio.h>
 #include <include/stdarg.h>
+#include <include/types.h>
 
 void pl011_uart_putch(int32_t ch, int32_t *cnt) {
     pl011_uart_write(ch);
