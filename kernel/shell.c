@@ -168,14 +168,14 @@ void loadimg() {
     }
 
     // move bootstrap to new memory space
-    uint8_t *new_bootstrap_addr = (uint8_t *)tmp_image_addr + image_size;
+    uint8_t *new_bootstrap_addr = (uint8_t *)ROUNDUP(tmp_image_addr + image_size, 8);
     size_t bootstrap_size = (size_t)(&__stop_bootstrap - &__start_bootstrap);
     for (size_t i = 0; i < bootstrap_size; ++i) {
         *(new_bootstrap_addr + i) = *(uint8_t *)(&__start_bootstrap + i);
     }
 
     // set new_stack_top to new bootstrap end + 4k;
-    physaddr_t new_stack_top = (physaddr_t)(new_bootstrap_addr + bootstrap_size + 4096);
+    physaddr_t new_stack_top = (physaddr_t)(ROUNDUP(new_bootstrap_addr + bootstrap_size + 4096, 16));
 
     // jump to bootstrap
     ((void (*)(physaddr_t, size_t, physaddr_t, physaddr_t))new_bootstrap_addr)(image_addr, image_size, tmp_image_addr, new_stack_top);
