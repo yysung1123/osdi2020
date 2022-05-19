@@ -34,6 +34,9 @@ clean:
 qemu: all
 	$(QEMU) -M raspi3b -kernel kernel8.img -display none -serial pty
 
+stdio: all
+	$(QEMU) -M raspi3b -kernel kernel8.img -display none -serial stdio
+
 graphic: all
 	$(QEMU) -M raspi3b -kernel kernel8.img -serial pty
 
