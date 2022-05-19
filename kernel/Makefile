@@ -1,4 +1,4 @@
-KERN_OBJS = kernel/entry.o \
+KERN_OBJS = kernel/start.o \
 	kernel/main.o \
 	kernel/mmio.o \
 	kernel/uart.o \
