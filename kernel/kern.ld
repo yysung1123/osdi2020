@@ -3,7 +3,7 @@ SECTIONS
   . = 0x80000;
   .text : {
     _KERNEL_START = .;
-    *(.text.entry)
+    *(.text.start)
     *(.text .text.*)
   }
 

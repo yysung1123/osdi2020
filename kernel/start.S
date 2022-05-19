@@ -1,4 +1,4 @@
-.section ".text.entry"
+.section ".text.start"
 _start:
   mrs x0, mpidr_el1
   and x0, x0, 3
