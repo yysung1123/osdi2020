@@ -198,7 +198,8 @@ void do_shell() {
         } else if (!strcmp(cmd, "help")) {
             pl011_uart_puts("hello : print Hello World!\nhelp : help\n"
                             "reboot : reboot rpi3\ntimestamp : get current timestamp\n"
-                            "loadimg: load the new kernel from UART");
+                            "loadimg: load the new kernel from UART\n"
+                            "exc: issue svc #1 and print exception info");
         } else if (!strcmp(cmd, "reboot")) {
             pl011_uart_puts("Reboot...");
             reset(0);
@@ -209,6 +210,8 @@ void do_shell() {
             pl011_uart_printk("[%lld.%06lld]\n", integer_part, decimal_part);
         } else if (!strcmp(cmd, "loadimg")) {
             loadimg();
+        } else if (!strcmp(cmd, "exc")) {
+            __asm__ ("svc #1");
         } else {
             pl011_uart_printk("Err: command %s not found, try <help>\n", cmd);
         }
