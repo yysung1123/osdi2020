@@ -20,6 +20,9 @@ _start:
 // Set the stack pointer
   ldr x0, = _stack_top
   mov sp, x0
+// load exception_table to VBAR_EL2
+  ldr x0, = exception_table
+  msr VBAR_EL2, x0
   bl main
 loop:
   b loop

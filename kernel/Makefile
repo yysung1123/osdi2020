@@ -5,7 +5,9 @@ KERN_OBJS = kernel/start.o \
 	kernel/shell.o \
 	kernel/mbox.o \
 	kernel/printk.o \
-	kernel/fb.o
+	kernel/fb.o \
+	kernel/entry.o \
+	kernel/exc.o
 
 ifeq ($(WITH_BMP_SPLASH),1)
 	KERN_OBJS += kernel/splash.o
