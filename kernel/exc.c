@@ -1,7 +1,7 @@
 #include <include/printk.h>
 #include <include/types.h>
 
-void exception_handler() {
+void print_exception_info() {
     uint64_t ELR_EL2;
     uint32_t ESR_EL2;
     __asm__ volatile("mrs %0, ELR_EL2"
@@ -14,6 +14,4 @@ void exception_handler() {
     pl011_uart_printk("Exception return address: 0x%x\n", ELR_EL2);
     pl011_uart_printk("Exception class (EC): 0x%x\n", EC);
     pl011_uart_printk("Instruction specific syndrome (ISS): 0x%x\n", ISS);
-
-    for (;;) {}
 }
