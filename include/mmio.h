@@ -6,7 +6,8 @@ void mmio_write(uint64_t, uint32_t);
 uint32_t mmio_read(uint64_t);
 
 enum {
-    PERIPHERAL_BASE = 0x3f000000
+    PERIPHERAL_BASE = 0x3f000000,
+    ARM_LOCAL_PERIPERHAL_BASE = 0x40000000
 };
 
 enum {

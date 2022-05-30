@@ -5,6 +5,7 @@
 #include <include/mbox.h>
 #include <include/uart.h>
 #include <include/printk.h>
+#include <include/timer.h>
 
 #define PM_PASSWORD 0x5a000000
 #define PM_RSTC 0x3F10001c
@@ -199,7 +200,8 @@ void do_shell() {
             pl011_uart_puts("hello : print Hello World!\nhelp : help\n"
                             "reboot : reboot rpi3\ntimestamp : get current timestamp\n"
                             "loadimg: load the new kernel from UART\n"
-                            "exc: issue svc #1 and print exception info");
+                            "exc: issue svc #1 and print exception info\n"
+                            "irq: enable timers");
         } else if (!strcmp(cmd, "reboot")) {
             pl011_uart_puts("Reboot...");
             reset(0);
@@ -212,6 +214,9 @@ void do_shell() {
             loadimg();
         } else if (!strcmp(cmd, "exc")) {
             __asm__ ("svc #1");
+        } else if (!strcmp(cmd, "irq")) {
+            local_timer_init();
+            core_timer_init();
         } else {
             pl011_uart_printk("Err: command %s not found, try <help>\n", cmd);
         }
