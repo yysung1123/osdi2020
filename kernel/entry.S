@@ -1,42 +1,4 @@
 // Simple vector table
-.align 11 // vector table should be aligned to 0x800
-.global exception_table
-exception_table:
-  b exception_handler // branch to a handler function.
-  .align 7 // entry size is 0x80, .align will pad 0
-  b exception_handler
-  .align 7
-  b exception_handler
-  .align 7
-  b exception_handler
-  .align 7
-
-  b exception_handler
-  .align 7
-  b exception_handler
-  .align 7
-  b exception_handler
-  .align 7
-  b exception_handler
-  .align 7
-
-  b exception_handler
-  .align 7
-  b exception_handler
-  .align 7
-  b exception_handler
-  .align 7
-  b exception_handler
-  .align 7
-
-  b exception_handler
-  .align 7
-  b exception_handler
-  .align 7
-  b exception_handler
-  .align 7
-  b exception_handler
-  .align 7
 
 .macro kernel_entry
   stp x0, x1, [sp, #16 * 0]
@@ -76,6 +38,52 @@ kernel_exit:
   ldr x30, [sp, #16 * 15]
   add sp, sp, #16 * 16
   eret
+
+.macro entry_handler label:req
+  sub sp, sp, #16 * 16
+  kernel_entry
+  bl \label\()_handler
+  b kernel_exit
+.endm
+
+.align 11 // vector table should be aligned to 0x800
+.global exception_table
+exception_table:
+  b exception_handler // branch to a handler function.
+  .align 7 // entry size is 0x80, .align will pad 0
+  b exception_handler
+  .align 7
+  b exception_handler
+  .align 7
+  b exception_handler
+  .align 7
+
+  b exception_handler
+  .align 7
+  entry_handler irq
+  .align 7
+  b exception_handler
+  .align 7
+  b exception_handler
+  .align 7
+
+  b exception_handler
+  .align 7
+  b exception_handler
+  .align 7
+  b exception_handler
+  .align 7
+  b exception_handler
+  .align 7
+
+  b exception_handler
+  .align 7
+  b exception_handler
+  .align 7
+  b exception_handler
+  .align 7
+  b exception_handler
+  .align 7
 
 exception_handler:
   sub sp, sp, #16 * 16
