@@ -2,6 +2,9 @@
 #include <include/mmio.h>
 #include <include/types.h>
 #include <include/mbox.h>
+#include <include/irq.h>
+
+static struct UARTIORingBuffer pl011_inbuf, pl011_outbuf;
 
 int32_t mini_uart_read() {
     while (!(mmio_read(AUX_MU_LSR_REG) & 1)) {}
@@ -89,19 +92,43 @@ void pl011_uart_init() {
     // 8 bits, enable FIFOs, no parity
     mmio_write(PL011_UART_LCRH, 0x70);
 
+    // enable rx interrupt
+    pl011_uart_enable_rx_interrupt();
+
     // set CR to enable UART
     // enable Receive, Transmit, UART
     mmio_write(PL011_UART_CR, 0x301);
+
+    // qemu tx interrupt bug
+    while (mmio_read(PL011_UART_FR) & (1 << 5)) {}
+    mmio_write(PL011_UART_DR, 0);
+
+    // set UART interrupt
+    mmio_write(IRQ_ENABLE_2, 1 << 25);
 }
 
 int32_t pl011_uart_read() {
-    while (mmio_read(PL011_UART_FR) & (1 << 4)) {}
-    return mmio_read(PL011_UART_DR);
+    while (ringbuf_empty(&pl011_inbuf)) {}
+    int32_t data = ringbuf_pop(&pl011_inbuf);
+
+    pl011_uart_enable_rx_interrupt();
+    return data;
 }
 
 void pl011_uart_write(char c) {
+    while (ringbuf_full(&pl011_outbuf)) {}
+    ringbuf_push(&pl011_outbuf, (uint8_t)c);
+
+    pl011_uart_enable_tx_interrupt();
+}
+
+void pl011_uart_write_polling(char c) {
+    irq_disable();
+
     while (mmio_read(PL011_UART_FR) & (1 << 5)) {}
     mmio_write(PL011_UART_DR, c);
+
+    irq_enable();
 }
 
 char pl011_uart_getchar() {
@@ -134,4 +161,71 @@ void pl011_uart_puts(const char *buf) {
     }
 
     pl011_uart_putchar('\n');
+}
+
+void pl011_uart_enable_tx_interrupt() {
+    *(volatile uint32_t *)PL011_UART_IMSC |= PL011_UART_IMSC_TXIM;
+}
+
+void pl011_uart_disable_tx_interrupt() {
+    *(volatile uint32_t *)PL011_UART_IMSC &= ~PL011_UART_IMSC_TXIM;
+}
+
+void pl011_uart_enable_rx_interrupt() {
+    *(volatile uint32_t *)PL011_UART_IMSC |= PL011_UART_IMSC_RXIM;
+}
+
+void pl011_uart_disable_rx_interrupt() {
+    *(volatile uint32_t *)PL011_UART_IMSC &= ~PL011_UART_IMSC_RXIM;
+}
+
+void pl011_uart_intr() {
+    uint32_t status = mmio_read(PL011_UART_MIS);
+    if (status & PL011_UART_MIS_RXMIS) {
+        if (!ringbuf_full(&pl011_inbuf)) {
+            uint8_t data = (uint8_t)mmio_read(PL011_UART_DR);
+            ringbuf_push(&pl011_inbuf, data);
+
+            if (ringbuf_full(&pl011_inbuf)) {
+                pl011_uart_disable_rx_interrupt(); // disable interrupt until inbuf is not full
+            }
+        }
+    }
+
+    if (status & PL011_UART_MIS_TXMIS) {
+        if (!ringbuf_empty(&pl011_outbuf)) {
+            uint8_t data = ringbuf_pop(&pl011_outbuf);
+            mmio_write(PL011_UART_DR, (uint32_t)data);
+
+            if (ringbuf_empty(&pl011_outbuf)) {
+                pl011_uart_disable_tx_interrupt(); // disable interrupt until outbuf is not empty
+            }
+        }
+    }
+}
+
+bool ringbuf_empty(struct UARTIORingBuffer *ringbuf) {
+    __sync_synchronize();
+    return ringbuf->wpos == ringbuf->rpos;
+}
+
+bool ringbuf_full(struct UARTIORingBuffer *ringbuf) {
+    __sync_synchronize();
+    return (ringbuf->wpos + 1) % UART_IOBUFSIZE == ringbuf->rpos;
+}
+
+// assume ringbuf is not full
+// should check ringbuf_full before calling ringbuf_push
+void ringbuf_push(struct UARTIORingBuffer *ringbuf, uint8_t elem) {
+    ringbuf->buf[ringbuf->wpos] = elem;
+    ringbuf->wpos = (ringbuf->wpos + 1) % UART_IOBUFSIZE;
+}
+
+// assume ringbuf is not empty
+// should check ringbuf_empty before calling ringbuf_pop
+uint8_t ringbuf_pop(struct UARTIORingBuffer *ringbuf) {
+    uint8_t elem = ringbuf->buf[ringbuf->rpos];
+    ringbuf->rpos = (ringbuf->rpos + 1) % UART_IOBUFSIZE;
+
+    return elem;
 }

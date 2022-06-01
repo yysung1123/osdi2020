@@ -12,7 +12,8 @@ void local_timer_handler(){
     static uint32_t local_timer_jiffies = 0;
 
     mmio_write(LOCAL_TIMER_IRQ_CLR, 0xc0000000); // clear interrupt and reload.
-    pl011_uart_printk("Local timer interrupt, jiffies %d\n", ++local_timer_jiffies);
+    // TODO: bottom half ISR
+    pl011_uart_printk_polling("Local timer interrupt, jiffies %d\n", ++local_timer_jiffies);
 }
 
 void core_timer_init() {
@@ -31,5 +32,6 @@ void core_timer_handler() {
 
     __asm__ volatile("msr cntp_tval_el0, %0"
                      :: "r"(EXPIRE_PERIOD));
-    pl011_uart_printk("Core timer interrupt, jiffies %d\n", ++core_timer_jiffies);
+    // TODO: bottom half ISR
+    pl011_uart_printk_polling("Core timer interrupt, jiffies %d\n", ++core_timer_jiffies);
 }
