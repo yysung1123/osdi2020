@@ -3,6 +3,7 @@
 #include <include/exc.h>
 #include <include/uart.h>
 #include <include/utils.h>
+#include <include/timer.h>
 
 void syscall_handler(struct TrapFrame *tf) {
     uint64_t nr = tf->x[8];
@@ -17,6 +18,9 @@ void syscall_handler(struct TrapFrame *tf) {
             break;
         case SYS_get_timestamp:
             ret = sys_get_timestamp((struct Timestamp *)tf->x[0]);
+            break;
+        case SYS_init_timers:
+            ret = sys_init_timers();
             break;
         default:
     }
@@ -34,4 +38,8 @@ int64_t sys_uart_write(const char *buf, size_t len) {
 
 int64_t sys_get_timestamp(struct Timestamp *ts) {
     return do_get_timestamp(ts);
+}
+
+int64_t sys_init_timers() {
+    return do_init_timers();
 }
