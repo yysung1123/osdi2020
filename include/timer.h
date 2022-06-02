@@ -18,3 +18,4 @@ void local_timer_init();
 void local_timer_handler();
 void core_timer_init();
 void core_timer_handler();
+int64_t do_init_timers();

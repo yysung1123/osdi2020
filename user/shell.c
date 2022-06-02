@@ -3,7 +3,6 @@
 #include <include/string.h>
 #include <include/types.h>
 #include <include/mbox.h>
-#include <include/timer.h>
 #include <include/stdio.h>
 #include <include/utils.h>
 #include <include/syscall.h>
@@ -204,8 +203,7 @@ void shell_main() {
         } else if (!strcmp(cmd, "exc")) {
             __asm__ ("svc #1");
         } else if (!strcmp(cmd, "irq")) {
-            local_timer_init();
-            core_timer_init();
+            init_timers();
         } else {
             printf("Err: command %s not found, try <help>\n", cmd);
         }

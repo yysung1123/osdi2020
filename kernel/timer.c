@@ -35,3 +35,10 @@ void core_timer_handler() {
     // TODO: bottom half ISR
     pl011_uart_printk_polling("Core timer interrupt, jiffies %d\n", ++core_timer_jiffies);
 }
+
+int64_t do_init_timers() {
+    local_timer_init();
+    core_timer_init();
+
+    return 0;
+}
