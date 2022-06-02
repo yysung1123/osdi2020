@@ -2,4 +2,4 @@
 
 #include <include/uart.h>
 
-void do_shell();
+void shell_main();

@@ -3,9 +3,8 @@
 #include <include/string.h>
 #include <include/types.h>
 #include <include/mbox.h>
-#include <include/uart.h>
-#include <include/printk.h>
 #include <include/timer.h>
+#include <include/stdio.h>
 
 #define PM_PASSWORD 0x5a000000
 #define PM_RSTC 0x3F10001c
@@ -17,7 +16,7 @@ void reset(uint32_t tick){ // reboot after watchdog timer expire
 }
 
 void prompt() {
-    pl011_uart_printk("# ");
+    printf("# ");
 }
 
 uint64_t read_frequency() {
@@ -50,7 +49,7 @@ void get_board_revision() {
 
     mailbox_call((uintptr_t)mailbox, 8);
 
-    pl011_uart_printk("Board Revision: 0x%x\n", mailbox[5]); // it should be 0xa02082 for rpi3 b
+    printf("Board Revision: 0x%x\n", mailbox[5]); // it should be 0xa02082 for rpi3 b
 }
 
 void get_vc_base_address() {
@@ -68,7 +67,7 @@ void get_vc_base_address() {
 
     mailbox_call((uintptr_t)mailbox, 8);
 
-    pl011_uart_printk("VC base address: 0x%x\n", mailbox[5]);
+    printf("VC base address: 0x%x\n", mailbox[5]);
 }
 
 uint32_t getuint32_be() {
@@ -154,10 +153,10 @@ void loadimg() {
     extern const void _KERNEL_END, __start_bootstrap, __stop_bootstrap;
 
     size_t image_size = getuint32_be();
-    pl011_uart_printk("Image size: %d\n", image_size);
+    printf("Image size: %d\n", image_size);
 
     physaddr_t image_addr = getuint32_be();
-    pl011_uart_printk("Start address: 0x%016x\n", (uint32_t)image_addr);
+    printf("Start address: 0x%016x\n", (uint32_t)image_addr);
     physaddr_t tmp_image_addr = MAX((physaddr_t)&_KERNEL_END, image_addr + image_size);
 
     uint32_t input_checksum = getuint32_be();
@@ -167,7 +166,7 @@ void loadimg() {
     uint32_t checksum = crc32(0, (uint8_t *)tmp_image_addr, image_size);
 
     if (input_checksum != checksum) {
-        pl011_uart_printk("Checksum mismatch\nExpected: %x\nReceived: %x\n", input_checksum, checksum);
+        printf("Checksum mismatch\nExpected: %x\nReceived: %x\n", input_checksum, checksum);
         return;
     }
 
@@ -185,34 +184,34 @@ void loadimg() {
     ((void (*)(physaddr_t, size_t, physaddr_t, physaddr_t))new_bootstrap_addr)(image_addr, image_size, tmp_image_addr, new_stack_top);
 }
 
-void do_shell() {
+void shell_main() {
     const size_t CMD_SIZE = 1024;
     char cmd[CMD_SIZE];
     extern const void _KERNEL_START;
-    pl011_uart_puts("Welcome to NCTU OS");
-    pl011_uart_printk("Kernel start address: 0x%016x\n", &_KERNEL_START);
+    puts("Welcome to NCTU OS");
+    printf("Kernel start address: 0x%016x\n", &_KERNEL_START);
     get_board_revision();
     get_vc_base_address();
 
     while (1) {
         prompt();
-        pl011_uart_gets_s(cmd, CMD_SIZE);
+        gets_s(cmd, CMD_SIZE);
         if (!strcmp(cmd, "hello")) {
-            pl011_uart_puts("Hello World!");
+            puts("Hello World!");
         } else if (!strcmp(cmd, "help")) {
-            pl011_uart_puts("hello : print Hello World!\nhelp : help\n"
-                            "reboot : reboot rpi3\ntimestamp : get current timestamp\n"
-                            "loadimg: load the new kernel from UART\n"
-                            "exc: issue svc #1 and print exception info\n"
-                            "irq: enable timers");
+            puts("hello : print Hello World!\nhelp : help\n"
+                 "reboot : reboot rpi3\ntimestamp : get current timestamp\n"
+                 "loadimg: load the new kernel from UART\n"
+                 "exc: issue svc #1 and print exception info\n"
+                 "irq: enable timers");
         } else if (!strcmp(cmd, "reboot")) {
-            pl011_uart_puts("Reboot...");
+            puts("Reboot...");
             reset(0);
         } else if (!strcmp(cmd, "timestamp")) {
             uint64_t freq = read_frequency(), counts = read_counts();
             uint64_t integer_part = counts / freq;
             uint64_t decimal_part = (counts * 1000000 / freq) % 1000000;
-            pl011_uart_printk("[%lld.%06lld]\n", integer_part, decimal_part);
+            printf("[%lld.%06lld]\n", integer_part, decimal_part);
         } else if (!strcmp(cmd, "loadimg")) {
             loadimg();
         } else if (!strcmp(cmd, "exc")) {
@@ -221,7 +220,7 @@ void do_shell() {
             local_timer_init();
             core_timer_init();
         } else {
-            pl011_uart_printk("Err: command %s not found, try <help>\n", cmd);
+            printf("Err: command %s not found, try <help>\n", cmd);
         }
     }
 }
