@@ -9,7 +9,8 @@ KERN_OBJS = kernel/start.o \
 	kernel/exc.o \
 	kernel/timer.o \
 	kernel/irq.o \
-	kernel/syscall.o
+	kernel/syscall.o \
+	kernel/utils.o
 
 ifeq ($(WITH_BMP_SPLASH),1)
 	KERN_OBJS += kernel/splash.o

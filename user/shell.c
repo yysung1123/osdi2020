@@ -5,6 +5,8 @@
 #include <include/mbox.h>
 #include <include/timer.h>
 #include <include/stdio.h>
+#include <include/utils.h>
+#include <include/syscall.h>
 
 #define PM_PASSWORD 0x5a000000
 #define PM_RSTC 0x3F10001c
@@ -17,22 +19,6 @@ void reset(uint32_t tick){ // reboot after watchdog timer expire
 
 void prompt() {
     printf("# ");
-}
-
-uint64_t read_frequency() {
-    uint64_t res;
-    // read frequency of core timer
-    __asm__ __volatile("mrs %0, cntfrq_el0"
-                       : "=r"(res));
-    return res;
-}
-
-uint64_t read_counts() {
-    uint64_t res;
-    // read counts of core timer
-    __asm__ __volatile("mrs %0, cntpct_el0"
-                       : "=r"(res));
-    return res;
 }
 
 void get_board_revision() {
@@ -208,9 +194,10 @@ void shell_main() {
             puts("Reboot...");
             reset(0);
         } else if (!strcmp(cmd, "timestamp")) {
-            uint64_t freq = read_frequency(), counts = read_counts();
-            uint64_t integer_part = counts / freq;
-            uint64_t decimal_part = (counts * 1000000 / freq) % 1000000;
+            struct Timestamp ts;
+            get_timestamp(&ts);
+            uint64_t integer_part = ts.counts / ts.freq;
+            uint64_t decimal_part = (ts.counts * 1000000 / ts.freq) % 1000000;
             printf("[%lld.%06lld]\n", integer_part, decimal_part);
         } else if (!strcmp(cmd, "loadimg")) {
             loadimg();
