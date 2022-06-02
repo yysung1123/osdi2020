@@ -186,9 +186,9 @@ void shell_main() {
         } else if (!strcmp(cmd, "help")) {
             puts("hello : print Hello World!\nhelp : help\n"
                  "reboot : reboot rpi3\ntimestamp : get current timestamp\n"
-                 "loadimg: load the new kernel from UART\n"
-                 "exc: issue svc #1 and print exception info\n"
-                 "irq: enable timers");
+                 "loadimg : load the new kernel from UART\n"
+                 "exc : issue svc #1 and print exception info\n"
+                 "irq : enable timers");
         } else if (!strcmp(cmd, "reboot")) {
             puts("Reboot...");
             reset(0);
