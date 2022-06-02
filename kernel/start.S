@@ -31,7 +31,7 @@ _start:
   eret
 el1_start:
 // Set the stack pointer
-  ldr x0, = _stack_top
+  ldr x0, = _el1_stack_top
   mov sp, x0
 // load exception_table to VBAR_EL1
   ldr x0, = exception_table
@@ -41,8 +41,14 @@ loop:
   b loop
 
 .bss
-  .globl _stack
-_stack:
+  .globl _el1_stack
+_el1_stack:
   .space 8 * 4096
-  .globl _stack_top
-_stack_top:
+  .globl _el1_stack_top
+_el1_stack_top:
+
+  .globl _el0_stack
+_el0_stack:
+  .space 8 * 4096
+  .globl _el0_stack_top
+_el0_stack_top:
