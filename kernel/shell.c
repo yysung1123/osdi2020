@@ -72,10 +72,14 @@ void get_vc_base_address() {
 }
 
 uint32_t getuint32_be() {
+    char buf[4];
+    for (size_t nread = 0; nread < 4;
+         nread += pl011_uart_read(buf + nread, 4 - nread)) {}
+
     uint32_t res = 0;
     for (int i = 0; i < 4; ++i) {
         res <<= 8;
-        res += (uint8_t)pl011_uart_read();
+        res += (uint8_t)buf[i];
     }
 
     return res;
@@ -157,9 +161,8 @@ void loadimg() {
     physaddr_t tmp_image_addr = MAX((physaddr_t)&_KERNEL_END, image_addr + image_size);
 
     uint32_t input_checksum = getuint32_be();
-    for (size_t i = 0; i < image_size; ++i) {
-        *(uint8_t *)(tmp_image_addr + i) = pl011_uart_read();
-    }
+    for (size_t nread = 0; nread < image_size;
+         nread += pl011_uart_read((uint8_t *)tmp_image_addr + nread, image_size - nread)) {}
 
     uint32_t checksum = crc32(0, (uint8_t *)tmp_image_addr, image_size);
 

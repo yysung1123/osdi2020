@@ -108,19 +108,24 @@ void pl011_uart_init() {
     mmio_write(IRQ_ENABLE_2, 1 << 25);
 }
 
-int32_t pl011_uart_read() {
-    while (ringbuf_empty(&pl011_inbuf)) {}
-    int32_t data = ringbuf_pop(&pl011_inbuf);
+ssize_t pl011_uart_read(void *buf, size_t count) {
+    ssize_t num_read;
+    for (num_read = 0; num_read < count && !ringbuf_empty(&pl011_inbuf); ++num_read) {
+        *((uint8_t *)buf + num_read) = ringbuf_pop(&pl011_inbuf);
+    }
 
     pl011_uart_enable_rx_interrupt();
-    return data;
+    return num_read;
 }
 
-void pl011_uart_write(char c) {
-    while (ringbuf_full(&pl011_outbuf)) {}
-    ringbuf_push(&pl011_outbuf, (uint8_t)c);
+ssize_t pl011_uart_write(const void *buf, size_t count) {
+    ssize_t num_write;
+    for (num_write = 0; num_write < count && !ringbuf_full(&pl011_outbuf); ++num_write) {
+        ringbuf_push(&pl011_outbuf, *((uint8_t *)buf + num_write));
+    }
 
     pl011_uart_enable_tx_interrupt();
+    return num_write;
 }
 
 void pl011_uart_write_polling(char c) {
@@ -133,9 +138,12 @@ void pl011_uart_write_polling(char c) {
 }
 
 char pl011_uart_getchar() {
-    char c = pl011_uart_read();
+    char buf[1];
+    while (pl011_uart_read(&buf, 1) != 1) {};
+
+    char c = buf[0];
     if (c == '\r') c = '\n';
-    pl011_uart_write(c);
+    pl011_uart_putchar(c);
 
     return c;
 }
@@ -152,7 +160,8 @@ void pl011_uart_gets_s(char *buf, size_t len) {
 }
 
 void pl011_uart_putchar(char c) {
-    pl011_uart_write(c);
+    char buf[1] = {c};
+    while (pl011_uart_write(buf, 1) != 1) {}
 }
 
 void pl011_uart_puts(const char *buf) {
