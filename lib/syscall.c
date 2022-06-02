@@ -1,5 +1,6 @@
 #include <include/types.h>
 #include <include/syscall.h>
+#include <include/utils.h>
 
 #define SYSCALL_NOARG(name, ret_t) \
 ret_t name(void) { return syscall((SYS_##name), 0, 0, 0, 0, 0); }
@@ -39,3 +40,4 @@ static inline int64_t syscall(int64_t num, uint64_t a0, uint64_t a1, uint64_t a2
 
 SYSCALL_2ARG(uart_read, ssize_t, char *, size_t);
 SYSCALL_2ARG(uart_write, ssize_t, const char *, size_t);
+SYSCALL_1ARG(get_timestamp, int64_t, struct Timestamp *);
