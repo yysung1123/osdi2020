@@ -5,7 +5,7 @@
 #include <include/types.h>
 
 void pl011_uart_putch(int32_t ch, int32_t *cnt) {
-    pl011_uart_write(ch);
+    pl011_uart_putchar(ch);
     (*cnt)++;
 }
 
