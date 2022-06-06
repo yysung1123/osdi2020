@@ -128,12 +128,8 @@ ssize_t pl011_uart_write(const void *buf, size_t count) {
 }
 
 void pl011_uart_write_polling(char c) {
-    irq_disable();
-
     while (mmio_read(PL011_UART_FR) & (1 << 5)) {}
     mmio_write(PL011_UART_DR, c);
-
-    irq_enable();
 }
 
 char pl011_uart_getchar() {
