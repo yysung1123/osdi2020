@@ -4,6 +4,7 @@
 #include <include/mbox.h>
 #include <include/irq.h>
 #include <include/compiler.h>
+#include <include/printk.h>
 
 static struct UARTIORingBuffer pl011_inbuf, pl011_outbuf;
 
@@ -106,6 +107,9 @@ void pl011_uart_init() {
 
     // set UART interrupt
     mmio_write(IRQ_ENABLE_2, 1 << 25);
+
+    // print init uart done information
+    pl011_uart_printk_time_polling("Init PL011 UART done\n");
 }
 
 ssize_t pl011_uart_read(void *buf, size_t count) {
