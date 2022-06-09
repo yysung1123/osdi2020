@@ -7,6 +7,9 @@ void local_timer_init(){
     uint32_t flag = 0x30000000; // enable timer and interrupt.
     uint32_t reload = 25000000;
     mmio_write(LOCAL_TIMER_CONTROL_REG, flag | reload);
+
+    // print init local timer information
+    pl011_uart_printk_time_polling("Init local timer done\n");
 }
 
 void local_timer_handler(){
@@ -27,6 +30,9 @@ void core_timer_init() {
                      :: "r"(EXPIRE_PERIOD));
     // enable timer interrupt
     mmio_write(CORE0_TIMER_IRQ_CTRL, 2);
+
+    // print init core timer information
+    pl011_uart_printk_time_polling("Init core timer done\n");
 }
 
 void core_timer_handler() {

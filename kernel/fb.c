@@ -53,6 +53,9 @@ void fb_init() {
         framebuffer = (uint8_t *)((physaddr_t)mailbox[5]);
         framebuffer_len = mailbox[6];
     }
+
+    // print init fb done information
+    pl011_uart_printk_time("Init Framebuffer done\n");
 }
 
 #ifdef WITH_BMP_SPLASH
