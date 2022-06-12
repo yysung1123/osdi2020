@@ -53,35 +53,38 @@ task_t* get_task(uint32_t pid) {
     return &task_pool[pid];
 }
 
-void __attribute__((optimize("O0"))) task1() {
+void task1() {
     while (1) {
-        pl011_uart_printk_polling("1...\n");
-
-        // delay
-        for (uint32_t i = 0; i < 100000000; ++i) {}
-
+        task_t *cur = get_current();
+        while (!cur->resched) {
+            __sync_synchronize();
+        }
+        pl011_uart_printk("1...\n");
+        cur->resched = false;
         schedule();
     }
 }
 
-void __attribute__((optimize("O0"))) task2() {
+void task2() {
     while (1) {
-        pl011_uart_printk_polling("2...\n");
-
-        // delay
-        for (uint32_t i = 0; i < 100000000; ++i) {}
-
+        task_t *cur = get_current();
+        while (!cur->resched) {
+            __sync_synchronize();
+        }
+        pl011_uart_printk("2...\n");
+        cur->resched = false;
         schedule();
     }
 }
 
-void __attribute__((optimize("O0"))) task3() {
+void task3() {
     while (1) {
-        pl011_uart_printk_polling("3...\n");
-
-        // delay
-        for (uint32_t i = 0; i < 100000000; ++i) {}
-
+        task_t *cur = get_current();
+        while (!cur->resched) {
+            __sync_synchronize();
+        }
+        pl011_uart_printk("3...\n");
+        cur->resched = false;
         schedule();
     }
 }

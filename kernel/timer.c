@@ -2,6 +2,7 @@
 #include <include/types.h>
 #include <include/printk.h>
 #include <include/irq.h>
+#include <include/task.h>
 
 void local_timer_init(){
     uint32_t flag = 0x30000000; // enable timer and interrupt.
@@ -36,13 +37,11 @@ void core_timer_init() {
 }
 
 void core_timer_handler() {
-    static uint32_t core_timer_jiffies = 0;
-
     __asm__ volatile("msr cntp_tval_el0, %0"
                      :: "r"(EXPIRE_PERIOD));
-    // bottom half ISR
-    irq_enable();
-    pl011_uart_printk("Core timer interrupt, jiffies %d\n", ++core_timer_jiffies);
+    // lab4 required 2-1
+    task_t *cur = get_current();
+    cur->resched = true;
 }
 
 int64_t do_init_timers() {
