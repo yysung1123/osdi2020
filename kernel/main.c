@@ -2,15 +2,21 @@
 #include <include/fb.h>
 #include <include/irq.h>
 #include <include/task.h>
+#include <include/sched.h>
 
 int main() {
     pl011_uart_init();
     fb_init();
     fb_show_splash_image();
+    task_init();
 
-    // lab4 required 1-3
+    // lab4 required 1-5
     irq_disable();
     privilege_task_create(&task1);
     privilege_task_create(&task2);
-    switch_to(get_task(0), get_task(1));
+    privilege_task_create(&task3);
+
+    while (1) {
+        schedule();
+    }
 }
