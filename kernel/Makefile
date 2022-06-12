@@ -12,7 +12,8 @@ KERN_OBJS = kernel/start.o \
 	kernel/syscall.o \
 	kernel/utils.o \
 	kernel/task.o \
-	kernel/switch_to.o
+	kernel/switch_to.o \
+	kernel/sched.o
 
 ifeq ($(WITH_BMP_SPLASH),1)
 	KERN_OBJS += kernel/splash.o
