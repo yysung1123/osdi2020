@@ -51,8 +51,21 @@
 .macro entry_handler el:req label:req
   sub sp, sp, #16 * 17
   kernel_entry \el
+// set handler argument
   mov x0, sp
+// set interrupt stack
+  .if \label == irq
+  ldr x1, = _interrupt_stack_top
+  mov sp, x1
+  str x0, [sp, #-16]!
+  mov x0, xzr
+  .endif
   bl \label\()_handler
+// restore stack
+  .if \label == irq
+  ldr x0, [sp], #16
+  mov sp, x0
+  .endif
   .if \el == 0
   b ret_to_user
   .else

@@ -41,14 +41,16 @@ loop:
   b loop
 
 .bss
+  .align 12
   .globl _el1_stack
 _el1_stack:
-  .space 8 * 4096
+  .space 4096
   .globl _el1_stack_top
 _el1_stack_top:
 
-  .globl _el0_stack
-_el0_stack:
-  .space 8 * 4096
-  .globl _el0_stack_top
-_el0_stack_top:
+  .align 12
+  .globl _interrupt_stack
+_interrupt_stack:
+  .space 4096
+  .globl _interrupt_stack_top
+_interrupt_stack_top:
