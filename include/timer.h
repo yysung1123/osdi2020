@@ -2,7 +2,7 @@
 
 #include <include/mmio.h>
 
-#define EXPIRE_PERIOD 0xfffffff
+#define EXPIRE_PERIOD 0x1ffffff
 
 enum {
     LOCAL_TIMER_CONTROL_REG = ARM_LOCAL_PERIPERHAL_BASE + 0x34,

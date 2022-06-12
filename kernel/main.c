@@ -3,6 +3,7 @@
 #include <include/irq.h>
 #include <include/task.h>
 #include <include/sched.h>
+#include <include/timer.h>
 
 int main() {
     irq_disable();
@@ -11,11 +12,14 @@ int main() {
     fb_init();
     fb_show_splash_image();
     task_init();
+    core_timer_init();
 
-    // lab4 required 1-5
+    // lab4 required 2-2
     privilege_task_create(&task1);
     privilege_task_create(&task2);
     privilege_task_create(&task3);
+
+    irq_enable();
 
     while (1) {
         schedule();

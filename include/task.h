@@ -31,6 +31,7 @@ struct task_struct {
     struct cpu_context cpu_context;
     uint32_t id;
     TaskState state;
+    bool resched;
 };
 
 typedef struct task_struct task_t;
