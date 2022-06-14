@@ -111,3 +111,8 @@ void check_resched() {
     cur->resched = false;
     schedule();
 }
+
+uint32_t do_get_taskid() {
+    task_t *cur = get_current();
+    return cur->id;
+}
