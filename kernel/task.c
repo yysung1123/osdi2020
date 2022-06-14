@@ -94,6 +94,14 @@ bool runqueue_full(runqueue_t *rq) {
     return (rq->tail + 1) % (NR_TASKS + 1) == rq->head;
 }
 
+uint32_t runqueue_size(runqueue_t *rq) {
+    if (rq->tail >= rq->head) {
+        return rq->tail - rq->head;
+    } else {
+        return rq->tail + (NR_TASKS + 1) - rq->head;
+    }
+}
+
 void do_exec(void(*func)()) {
     task_t *cur = get_current();
     uint64_t elr_el1 = (uint64_t)func;
@@ -180,4 +188,8 @@ void zombie_reaper() {
         }
         schedule();
     }
+}
+
+uint32_t num_runnable_tasks() {
+    return runqueue_size(&rq);
 }
