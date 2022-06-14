@@ -8,7 +8,8 @@
 typedef enum {
     TASK_FREE = 0,
     TASK_RUNNABLE,
-    TASK_RUNNING
+    TASK_RUNNING,
+    TASK_ZOMBIE
 } TaskState;
 
 typedef struct cpu_context {
@@ -64,3 +65,5 @@ uint8_t* get_ustack_by_id(uint32_t);
 uint8_t* get_kstacktop_by_id(uint32_t);
 uint8_t* get_ustacktop_by_id(uint32_t);
 int32_t do_fork(struct TrapFrame *);
+void do_exit();
+void zombie_reaper();

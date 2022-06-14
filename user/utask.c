@@ -29,10 +29,12 @@ void utask3() {
     printf("after fork: %d\n", pid);
     if (pid == 0) {
         printf("child process\n");
+        printf("exec taskid: %d\n", get_taskid());
+        exec(&utask3);
     } else {
         printf("parent process\n");
+        exit(0);
     }
-    exec(&utask_exec);
 }
 
 void utask_exec() {
