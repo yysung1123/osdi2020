@@ -31,7 +31,8 @@ ULIB = lib/printfmt.o \
 	lib/gets_s.o \
 	lib/getchar.o
 
-USER_OBJS = user/shell.o
+USER_OBJS = user/shell.o \
+	user/utask.o
 
 kernel/kernel8.elf: $(KERN_OBJS) $(ULIB) $(USER_OBJS)
 	$(LD) $(KERN_LDFLAGS) $(KERN_OBJS) $(ULIB) $(USER_OBJS) -o $@
