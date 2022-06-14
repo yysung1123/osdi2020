@@ -1,6 +1,7 @@
 #pragma once
 
 #include <include/stdarg.h>
+#include <include/types.h>
 
 // lib/printfmt.c
 void printfmt(void (*putch)(int, void*), void *putdat, const char *fmt, ...);
