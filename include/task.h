@@ -41,6 +41,8 @@ typedef struct {
     uint32_t head, tail;
 } runqueue_t;
 
+extern uint8_t ustack_pool[NR_TASKS][4096];
+
 void task_init();
 void privilege_task_create(void(*func)());
 void context_switch(task_t *);

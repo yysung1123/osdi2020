@@ -25,8 +25,12 @@ void utask2() {
 }
 
 void utask3() {
+    exec(&utask3_exec);
+}
+
+void utask3_exec() {
     while (1) {
-        printf("taskid: %d\n", get_taskid());
+        printf("exec taskid: %d\n", get_taskid());
 
         delay(100000000);
     }
