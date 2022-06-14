@@ -2,6 +2,7 @@
 #include <include/printk.h>
 #include <include/types.h>
 #include <include/syscall.h>
+#include <include/irq.h>
 
 void print_exception_info(struct TrapFrame *tf) {
     uint64_t ELR_EL1 = tf->elr_el1;
@@ -20,6 +21,7 @@ void sync_handler(struct TrapFrame *tf) {
 
     switch (EC) {
         case 0b010101:
+            irq_enable();
             svc_handler(tf);
             break;
         default:

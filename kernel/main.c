@@ -14,7 +14,7 @@ int main() {
     task_init();
     core_timer_init();
 
-    // lab4 required 2-2
+    // lab4 required 3-2
     privilege_task_create(&task1);
     privilege_task_create(&task2);
     privilege_task_create(&task3);

@@ -16,19 +16,27 @@
   stp x24, x25, [sp, #16 * 12]
   stp x26, x27, [sp, #16 * 13]
   stp x28, x29, [sp, #16 * 14]
-  mrs x0, esr_el1
-  mrs x1, elr_el1
-  mrs x2, spsr_el1
-  stp x30, x0, [sp, #16 * 15]
-  stp x1, x2, [sp, #16 * 16]
+  mrs x21, esr_el1
+  mrs x22, elr_el1
+  mrs x23, spsr_el1
+  mrs x24, sp_el0
+  stp x30, x21, [sp, #16 * 15]
+  stp x22, x23, [sp, #16 * 16]
+  str x24, [sp, #16 * 17]
 .endm
 
 .macro kernel_exit, el
-  ldp x1, x2, [sp, #16 * 16]
-  ldp x30, x0, [sp, #16 * 15]
-  msr spsr_el1, x2
-  msr elr_el1, x1
-  msr esr_el1, x0
+  // check reschedule flag
+  .if \el == 0
+    bl check_resched
+  .endif
+  ldr x24, [sp, #16 * 17]
+  ldp x22, x23, [sp, #16 * 16]
+  ldp x30, x21, [sp, #16 * 15]
+  msr sp_el0, x24
+  msr spsr_el1, x23
+  msr elr_el1, x22
+  msr esr_el1, x21
   ldp x28, x29, [sp, #16 * 14]
   ldp x26, x27, [sp, #16 * 13]
   ldp x24, x25, [sp, #16 * 12]
@@ -44,12 +52,12 @@
   ldp x4, x5, [sp, #16 * 2]
   ldp x2, x3, [sp, #16 * 1]
   ldp x0, x1, [sp, #16 * 0]
-  add sp, sp, #16 * 17
+  add sp, sp, #16 * 18
   eret
 .endm
 
 .macro entry_handler el:req label:req
-  sub sp, sp, #16 * 17
+  sub sp, sp, #16 * 18
   kernel_entry \el
 // set handler argument
   mov x0, sp
@@ -74,7 +82,7 @@
 .endm
 
 .macro exception_handler el
-  sub sp, sp, #16 * 17
+  sub sp, sp, #16 * 18
   kernel_entry \el
   mov x0, sp
   bl print_exception_info

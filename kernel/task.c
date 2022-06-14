@@ -3,9 +3,12 @@
 #include <include/printk.h>
 #include <include/string.h>
 #include <include/sched.h>
+#include <include/utask.h>
+#include <include/irq.h>
 
 static task_t task_pool[NR_TASKS];
 static uint8_t kstack_pool[NR_TASKS][4096];
+static uint8_t ustack_pool[NR_TASKS][4096];
 runqueue_t rq;
 
 void task_init() {
@@ -54,39 +57,15 @@ task_t* get_task(uint32_t pid) {
 }
 
 void task1() {
-    while (1) {
-        task_t *cur = get_current();
-        while (!cur->resched) {
-            __sync_synchronize();
-        }
-        pl011_uart_printk("1...\n");
-        cur->resched = false;
-        schedule();
-    }
+    do_exec(&utask1);
 }
 
 void task2() {
-    while (1) {
-        task_t *cur = get_current();
-        while (!cur->resched) {
-            __sync_synchronize();
-        }
-        pl011_uart_printk("2...\n");
-        cur->resched = false;
-        schedule();
-    }
+    do_exec(&utask2);
 }
 
 void task3() {
-    while (1) {
-        task_t *cur = get_current();
-        while (!cur->resched) {
-            __sync_synchronize();
-        }
-        pl011_uart_printk("3...\n");
-        cur->resched = false;
-        schedule();
-    }
+    do_exec(&utask3);
 }
 
 void runqueue_push(runqueue_t *rq, task_t *ts) {
@@ -111,4 +90,24 @@ bool runqueue_empty(runqueue_t *rq) {
 
 bool runqueue_full(runqueue_t *rq) {
     return (rq->tail + 1) % (NR_TASKS + 1) == rq->head;
+}
+
+void do_exec(void(*func)()) {
+    task_t *cur = get_current();
+    uint64_t elr_el1 = (uint64_t)func;
+    uint64_t ustack = (uint64_t)((uint8_t *)&ustack_pool + (cur->id + 1) * 4096);
+
+    __asm__ volatile("msr SPSR_EL1, xzr\n\t" // EL0t
+                     "msr ELR_EL1, %0\n\t"
+                     "msr SP_EL0, %1\n\t"
+                     "eret\n\t"
+                     :: "r"(elr_el1), "r"(ustack));
+}
+
+void check_resched() {
+    task_t *cur = get_current();
+    if (!cur->resched) return;
+
+    cur->resched = false;
+    schedule();
 }
