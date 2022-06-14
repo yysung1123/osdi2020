@@ -26,7 +26,7 @@ void task_init() {
     pl011_uart_printk_time_polling("Init task done\n");
 }
 
-void privilege_task_create(void(*func)()) {
+int32_t privilege_task_create(void(*func)()) {
     /* find a free task structure */
     uint32_t pid;
     task_t *ts = NULL;
@@ -37,14 +37,16 @@ void privilege_task_create(void(*func)()) {
         }
     }
     // the maximum number of PIDs was reached
-    if (ts == NULL) return;
+    if (ts == NULL) return -1;
 
     ts->id = pid;
     ts->state = TASK_RUNNABLE;
     ts->cpu_context.pc = (uint64_t)func;
-    ts->cpu_context.sp = (uint64_t)((uint8_t *)&kstack_pool + (pid + 1) * 4096);
+    ts->cpu_context.sp = (uint64_t)(get_kstacktop_by_id(pid));
 
     runqueue_push(&rq, ts);
+
+    return pid;
 }
 
 void context_switch(task_t *next){
@@ -95,7 +97,7 @@ bool runqueue_full(runqueue_t *rq) {
 void do_exec(void(*func)()) {
     task_t *cur = get_current();
     uint64_t elr_el1 = (uint64_t)func;
-    uint64_t ustack = (uint64_t)((uint8_t *)&ustack_pool + (cur->id + 1) * 4096);
+    uint64_t ustack = (uint64_t)(get_ustack_by_id(cur->id));
 
     __asm__ volatile("msr SPSR_EL1, xzr\n\t" // EL0t
                      "msr ELR_EL1, %0\n\t"
@@ -115,4 +117,49 @@ void check_resched() {
 uint32_t do_get_taskid() {
     task_t *cur = get_current();
     return cur->id;
+}
+
+uint8_t* get_kstack_by_id(uint32_t id) {
+    return ((uint8_t *)&kstack_pool + id * 4096);
+}
+
+uint8_t* get_ustack_by_id(uint32_t id) {
+    return ((uint8_t *)&ustack_pool + id * 4096);
+}
+
+uint8_t* get_kstacktop_by_id(uint32_t id) {
+    return ((uint8_t *)&kstack_pool + (id + 1) * 4096);
+}
+
+uint8_t* get_ustacktop_by_id(uint32_t id) {
+    return ((uint8_t *)&ustack_pool + (id + 1) * 4096);
+}
+
+int32_t do_fork(struct TrapFrame *tf) {
+    task_t *cur = get_current();
+    int32_t pid_new = privilege_task_create(NULL);
+    if (pid_new < 0) return -1;
+    task_t *ts_new = get_task(pid_new);
+
+    uint8_t *kstacktop_new = get_kstacktop_by_id(ts_new->id);
+    uint8_t *ustack_cur = get_ustack_by_id(cur->id);
+    uint8_t *ustack_new = get_ustack_by_id(ts_new->id);
+    uint8_t *ustacktop_cur = get_ustacktop_by_id(cur->id);
+    uint8_t *ustacktop_new = get_ustacktop_by_id(ts_new->id);
+
+    // set cpu_context and trapframe
+    extern void ret_to_user();
+    struct TrapFrame *tf_new = (struct TrapFrame *)(kstacktop_new - 16 * 18);
+    ts_new->cpu_context.pc = (uint64_t)ret_to_user;
+    ts_new->cpu_context.sp = (uint64_t)tf_new;
+
+    // copy user context
+    memcpy(ustack_new, ustack_cur, 4096);
+    *tf_new = *tf;
+    // child's return value is 0
+    tf_new->x[0] = 0;
+    // change child's stack
+    tf_new->sp_el0 = (uint64_t)(ustacktop_new + ((uint8_t *)tf->sp_el0 - ustacktop_cur));
+
+    return pid_new;
 }

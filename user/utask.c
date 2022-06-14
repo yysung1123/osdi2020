@@ -25,10 +25,17 @@ void utask2() {
 }
 
 void utask3() {
-    exec(&utask3_exec);
+    int32_t pid = fork();
+    printf("after fork: %d\n", pid);
+    if (pid == 0) {
+        printf("child process\n");
+    } else {
+        printf("parent process\n");
+    }
+    exec(&utask_exec);
 }
 
-void utask3_exec() {
+void utask_exec() {
     while (1) {
         printf("exec taskid: %d\n", get_taskid());
 

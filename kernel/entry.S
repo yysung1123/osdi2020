@@ -95,6 +95,7 @@
 
 // kernel_entry + kernel_exit > entry size
 // hence, move kernel_exit out of entry_handler
+.global ret_to_user
 ret_to_user:
   kernel_exit 0
 
