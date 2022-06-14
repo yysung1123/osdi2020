@@ -1,6 +1,7 @@
 #include <include/utask.h>
 #include <include/stdio.h>
 #include <include/types.h>
+#include <include/syscall.h>
 
 static void __attribute__((optimize("O0"))) delay(uint32_t d) {
     // delay
@@ -25,7 +26,7 @@ void utask2() {
 
 void utask3() {
     while (1) {
-        printf("3...\n");
+        printf("taskid: %d\n", get_taskid());
 
         delay(100000000);
     }
