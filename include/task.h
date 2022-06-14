@@ -4,6 +4,7 @@
 #include <include/types.h>
 
 #define NR_TASKS 64
+#define STACK_SIZE 4096
 
 typedef enum {
     TASK_FREE = 0,
