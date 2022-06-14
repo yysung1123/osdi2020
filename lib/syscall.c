@@ -42,3 +42,4 @@ SYSCALL_2ARG(uart_read, ssize_t, char *, size_t);
 SYSCALL_2ARG(uart_write, ssize_t, const char *, size_t);
 SYSCALL_1ARG(get_timestamp, int64_t, struct Timestamp *);
 SYSCALL_NOARG(init_timers, int64_t);
+SYSCALL_NOARG(get_taskid, uint32_t);
