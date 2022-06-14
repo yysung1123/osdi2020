@@ -163,3 +163,21 @@ int32_t do_fork(struct TrapFrame *tf) {
 
     return pid_new;
 }
+
+void do_exit() {
+    task_t *cur = get_current();
+    cur->state = TASK_ZOMBIE;
+    schedule();
+}
+
+void zombie_reaper() {
+    while (1) {
+        for (uint32_t pid = 0; pid < NR_TASKS; ++pid) {
+            if (task_pool[pid].state == TASK_ZOMBIE) {
+                memset(&(task_pool[pid]), 0, sizeof(task_t));
+                pl011_uart_printk_time_polling("zombie reaper: task %d\n", pid);
+            }
+        }
+        schedule();
+    }
+}

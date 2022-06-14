@@ -16,10 +16,11 @@ int main() {
 
     irq_enable();
 
-    // lab4 required 4-3
+    // lab4 required 4-4
     privilege_task_create(&task1);
     privilege_task_create(&task2);
     privilege_task_create(&task3);
+    privilege_task_create(&zombie_reaper);
 
     while (1) {
         schedule();

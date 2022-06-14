@@ -11,6 +11,9 @@ void schedule() {
     }
 
     task_t *next = runqueue_pop(&rq);
+    while (next && next->state != TASK_RUNNABLE) {
+        next = runqueue_pop(&rq);
+    }
     if (next == NULL) return;
     next->state = TASK_RUNNING;
 
