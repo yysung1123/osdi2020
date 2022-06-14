@@ -8,7 +8,7 @@
 
 static task_t task_pool[NR_TASKS];
 static uint8_t kstack_pool[NR_TASKS][4096];
-uint8_t ustack_pool[NR_TASKS][4096];
+static uint8_t ustack_pool[NR_TASKS][4096];
 runqueue_t rq;
 
 void task_init() {
@@ -105,7 +105,7 @@ uint32_t runqueue_size(runqueue_t *rq) {
 void do_exec(void(*func)()) {
     task_t *cur = get_current();
     uint64_t elr_el1 = (uint64_t)func;
-    uint64_t ustack = (uint64_t)(get_ustack_by_id(cur->id));
+    uint64_t ustack = (uint64_t)(get_ustacktop_by_id(cur->id));
 
     __asm__ volatile("msr SPSR_EL1, xzr\n\t" // EL0t
                      "msr ELR_EL1, %0\n\t"
