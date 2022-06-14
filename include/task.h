@@ -56,3 +56,4 @@ extern void switch_to(task_t *, task_t *);
 extern task_t* get_current();
 void do_exec(void(*func)());
 void check_resched();
+uint32_t do_get_taskid();
