@@ -26,6 +26,9 @@ void syscall_handler(struct TrapFrame *tf) {
         case SYS_get_taskid:
             ret = sys_get_taskid();
             break;
+        case SYS_exec:
+            ret = sys_exec(tf);
+            break;
         default:
     }
 
@@ -50,4 +53,12 @@ int64_t sys_init_timers() {
 
 int64_t sys_get_taskid() {
     return (int64_t)do_get_taskid();
+}
+
+int64_t sys_exec(struct TrapFrame *tf) {
+    task_t *cur = get_current();
+    uint64_t ustack = (uint64_t)((uint8_t *)&ustack_pool + (cur->id + 1) * 4096);
+    tf->elr_el1 = tf->x[0];
+    tf->sp_el0 = ustack;
+    return 0;
 }

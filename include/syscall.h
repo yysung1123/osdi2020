@@ -8,7 +8,8 @@ enum {
     SYS_uart_write,
     SYS_get_timestamp,
     SYS_init_timers,
-    SYS_get_taskid
+    SYS_get_taskid,
+    SYS_exec
 };
 
 void syscall_handler(struct TrapFrame *);
@@ -18,9 +19,11 @@ ssize_t uart_write(const char *, size_t);
 int64_t get_timestamp(struct Timestamp *ts);
 int64_t init_timers();
 uint32_t get_taskid();
+int64_t exec(void(*func)());
 
 int64_t sys_uart_read(char *, size_t);
 int64_t sys_uart_write(const char *, size_t);
 int64_t sys_get_timestamp(struct Timestamp *ts);
 int64_t sys_init_timers();
 int64_t sys_get_taskid();
+int64_t sys_exec(struct TrapFrame *);
