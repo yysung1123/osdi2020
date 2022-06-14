@@ -4,6 +4,7 @@
 #include <include/task.h>
 #include <include/sched.h>
 #include <include/timer.h>
+#include <include/test_case.h>
 
 int main() {
     irq_disable();
@@ -16,13 +17,10 @@ int main() {
 
     irq_enable();
 
-    // lab4 required 4-4
-    privilege_task_create(&task1);
-    privilege_task_create(&task2);
-    privilege_task_create(&task3);
-    privilege_task_create(&zombie_reaper);
-
-    while (1) {
-        schedule();
+    // lab4 required 1 and required 2
+    for (int i = 0; i < 4; ++i) {
+        privilege_task_create(&foo);
     }
+
+    idle();
 }
