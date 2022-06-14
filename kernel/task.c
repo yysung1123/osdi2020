@@ -7,8 +7,8 @@
 #include <include/irq.h>
 
 static task_t task_pool[NR_TASKS];
-static uint8_t kstack_pool[NR_TASKS][4096];
-static uint8_t ustack_pool[NR_TASKS][4096];
+static uint8_t kstack_pool[NR_TASKS][STACK_SIZE];
+static uint8_t ustack_pool[NR_TASKS][STACK_SIZE];
 runqueue_t rq;
 
 void task_init() {
@@ -128,19 +128,19 @@ uint32_t do_get_taskid() {
 }
 
 uint8_t* get_kstack_by_id(uint32_t id) {
-    return ((uint8_t *)&kstack_pool + id * 4096);
+    return ((uint8_t *)&kstack_pool + id * STACK_SIZE);
 }
 
 uint8_t* get_ustack_by_id(uint32_t id) {
-    return ((uint8_t *)&ustack_pool + id * 4096);
+    return ((uint8_t *)&ustack_pool + id * STACK_SIZE);
 }
 
 uint8_t* get_kstacktop_by_id(uint32_t id) {
-    return ((uint8_t *)&kstack_pool + (id + 1) * 4096);
+    return ((uint8_t *)&kstack_pool + (id + 1) * STACK_SIZE);
 }
 
 uint8_t* get_ustacktop_by_id(uint32_t id) {
-    return ((uint8_t *)&ustack_pool + (id + 1) * 4096);
+    return ((uint8_t *)&ustack_pool + (id + 1) * STACK_SIZE);
 }
 
 int32_t do_fork(struct TrapFrame *tf) {
@@ -162,7 +162,7 @@ int32_t do_fork(struct TrapFrame *tf) {
     ts_new->cpu_context.sp = (uint64_t)tf_new;
 
     // copy user context
-    memcpy(ustack_new, ustack_cur, 4096);
+    memcpy(ustack_new, ustack_cur, STACK_SIZE);
     *tf_new = *tf;
     // child's return value is 0
     tf_new->x[0] = 0;
