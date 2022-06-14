@@ -29,6 +29,9 @@ void syscall_handler(struct TrapFrame *tf) {
         case SYS_exec:
             ret = sys_exec(tf);
             break;
+        case SYS_fork:
+            ret = sys_fork(tf);
+            break;
         default:
     }
 
@@ -61,4 +64,8 @@ int64_t sys_exec(struct TrapFrame *tf) {
     tf->elr_el1 = tf->x[0];
     tf->sp_el0 = ustack;
     return 0;
+}
+
+int64_t sys_fork(struct TrapFrame *tf) {
+    return (int64_t)do_fork(tf);
 }
