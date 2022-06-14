@@ -45,3 +45,4 @@ SYSCALL_NOARG(init_timers, int64_t);
 SYSCALL_NOARG(get_taskid, uint32_t);
 int64_t exec(void(*a1)()) { return syscall((SYS_exec), (uint64_t)a1, 0, 0, 0, 0); }
 SYSCALL_NOARG(fork, int32_t);
+SYSCALL_1ARG(exit, int64_t, int64_t);

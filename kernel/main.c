@@ -14,10 +14,11 @@ int main() {
     task_init();
     core_timer_init();
 
-    // lab4 required 4-3
+    // lab4 required 4-4
     privilege_task_create(&task1);
     privilege_task_create(&task2);
     privilege_task_create(&task3);
+    privilege_task_create(&zombie_reaper);
 
     irq_enable();
 
