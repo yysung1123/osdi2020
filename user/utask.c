@@ -3,9 +3,13 @@
 #include <include/types.h>
 #include <include/syscall.h>
 
-void __attribute__((optimize("O0"))) utask3() {
+void utask3() {
+    exec(&utask3_exec);
+}
+
+void __attribute__((optimize("O0"))) utask3_exec() {
     while (1) {
-        printf("taskid: %d\n", get_taskid());
+        printf("exec taskid: %d\n", get_taskid());
 
         // delay
         for (uint32_t i = 0; i < 100000000; ++i) {}

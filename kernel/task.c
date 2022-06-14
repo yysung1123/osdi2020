@@ -8,7 +8,7 @@
 
 static task_t task_pool[NR_TASKS];
 static uint8_t kstack_pool[NR_TASKS][4096];
-static uint8_t ustack_pool[NR_TASKS][4096];
+uint8_t ustack_pool[NR_TASKS][4096];
 runqueue_t rq;
 
 void task_init() {
