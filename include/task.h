@@ -44,7 +44,7 @@ typedef struct {
 extern uint8_t ustack_pool[NR_TASKS][4096];
 
 void task_init();
-void privilege_task_create(void(*func)());
+int32_t privilege_task_create(void(*func)());
 void context_switch(task_t *);
 task_t* get_task(uint32_t);
 void task1();
@@ -59,3 +59,8 @@ extern task_t* get_current();
 void do_exec(void(*func)());
 void check_resched();
 uint32_t do_get_taskid();
+uint8_t* get_kstack_by_id(uint32_t);
+uint8_t* get_ustack_by_id(uint32_t);
+uint8_t* get_kstacktop_by_id(uint32_t);
+uint8_t* get_ustacktop_by_id(uint32_t);
+int32_t do_fork(struct TrapFrame *);
