@@ -140,8 +140,3 @@ exception_table:
   .align 7
   exception_handler 0
   .align 7
-
-.global get_current
-get_current:
-  mrs x0, tpidr_el1
-  ret
