@@ -56,7 +56,6 @@ bool runqueue_empty(runqueue_t *);
 bool runqueue_full(runqueue_t *);
 uint32_t runqueue_size(runqueue_t *);
 extern void switch_to(task_t *, task_t *);
-extern task_t* get_current();
 void do_exec(void(*func)());
 void check_resched();
 uint32_t do_get_taskid();
@@ -68,3 +67,10 @@ int32_t do_fork(struct TrapFrame *);
 void do_exit();
 void zombie_reaper();
 uint32_t num_runnable_tasks();
+
+static inline task_t* get_current() {
+    task_t *res;
+    __asm__ inline("mrs %0, tpidr_el1"
+                   : "=r"(res));
+    return res;
+}
