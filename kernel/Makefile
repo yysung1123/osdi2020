@@ -1,6 +1,5 @@
 KERN_OBJS = kernel/start.o \
 	kernel/main.o \
-	kernel/mmio.o \
 	kernel/uart.o \
 	kernel/mbox.o \
 	kernel/printk.o \
