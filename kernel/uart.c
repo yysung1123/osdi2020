@@ -196,20 +196,22 @@ void pl011_uart_disable_rx_interrupt() {
 void pl011_uart_intr() {
     uint32_t status = mmio_read(PL011_UART_MIS);
     if (status & PL011_UART_MIS_RXMIS) {
-        if (!ringbuf_full(&pl011_inbuf)) {
+        while (!ringbuf_full(&pl011_inbuf) && !(mmio_read(PL011_UART_FR) & PL011_UART_FR_RXFE)) {
             uint8_t data = (uint8_t)mmio_read(PL011_UART_DR);
             ringbuf_push(&pl011_inbuf, data);
         }
+
         if (ringbuf_full(&pl011_inbuf)) {
             pl011_uart_disable_rx_interrupt(); // disable interrupt until inbuf is not full
         }
     }
 
     if (status & PL011_UART_MIS_TXMIS) {
-        if (!ringbuf_empty(&pl011_outbuf)) {
+        while (!ringbuf_empty(&pl011_outbuf) && !(mmio_read(PL011_UART_FR) & PL011_UART_FR_TXFF)) {
             uint8_t data = ringbuf_pop(&pl011_outbuf);
             mmio_write(PL011_UART_DR, (uint32_t)data);
         }
+
         if (ringbuf_empty(&pl011_outbuf)) {
             pl011_uart_disable_tx_interrupt(); // disable interrupt until outbuf is not empty
         }
