@@ -17,7 +17,7 @@ int main() {
 
     irq_enable();
 
-    // lab4 required 3 and required 4
+    // lab4 elective 1
     privilege_task_create(&user_test);
     privilege_task_create(&zombie_reaper);
 
