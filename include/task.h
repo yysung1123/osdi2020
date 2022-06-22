@@ -2,6 +2,7 @@
 
 #include <include/exc.h>
 #include <include/types.h>
+#include <include/signal.h>
 
 #define NR_TASKS 64
 #define STACK_SIZE 4096
@@ -34,6 +35,8 @@ struct task_struct {
     uint32_t id;
     TaskState state;
     bool resched;
+    bool sigpending;
+    sigset_t signal;
 };
 
 typedef struct task_struct task_t;

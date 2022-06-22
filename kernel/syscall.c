@@ -5,6 +5,7 @@
 #include <include/utils.h>
 #include <include/timer.h>
 #include <include/task.h>
+#include <include/signal.h>
 
 void syscall_handler(struct TrapFrame *tf) {
     uint64_t nr = tf->x[8];
@@ -34,6 +35,9 @@ void syscall_handler(struct TrapFrame *tf) {
             break;
         case SYS_exit:
             ret = sys_exit((int64_t)tf->x[0]);
+            break;
+        case SYS_kill:
+            ret = sys_kill((int32_t)tf->x[0], (uint8_t)tf->x[1]);
             break;
         default:
     }
@@ -76,4 +80,8 @@ int64_t sys_fork(struct TrapFrame *tf) {
 int64_t sys_exit(int64_t status) {
     do_exit();
     return 0;
+}
+
+int64_t sys_kill(int32_t pid, uint8_t sig) {
+    return do_kill(pid, sig);
 }

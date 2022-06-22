@@ -43,6 +43,8 @@ int32_t privilege_task_create(void(*func)()) {
     ts->state = TASK_RUNNABLE;
     ts->cpu_context.pc = (uint64_t)func;
     ts->cpu_context.sp = (uint64_t)(get_kstacktop_by_id(pid));
+    ts->sigpending = false;
+    ts->signal = 0;
 
     runqueue_push(&rq, ts);
 

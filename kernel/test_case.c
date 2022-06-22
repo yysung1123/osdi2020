@@ -35,8 +35,23 @@ void test() {
     }
 }
 
+void signal_test() {
+    int pid = fork();
+    if (pid == 0) {
+        while (1) {
+            printf("Task id: %d\n", get_taskid());
+            delay(20000000);
+        }
+    } else {
+        delay(300000000);
+        kill(pid, 9);
+        printf("kill task %d\n", pid);
+        exit(0);
+    }
+}
+
 void user_test() {
-    do_exec(test);
+    do_exec(signal_test);
 }
 
 void idle() {
