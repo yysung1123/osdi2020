@@ -6,7 +6,7 @@ LD	= aarch64-linux-gnu-ld
 OBJCOPY = aarch64-linux-gnu-objcopy
 QEMU = qemu-system-aarch64
 
-CFLAGS = -Wall -fstrength-reduce -finline-functions -nostdinc -fno-builtin -fno-stack-protector
+CFLAGS = -mcpu=cortex-a72+nofp -Wall -fstrength-reduce -finline-functions -nostdinc -fno-builtin -fno-stack-protector
 
 # Add debug symbol
 CFLAGS += -g
@@ -24,9 +24,3 @@ clean:
 	rm -rf $(OBJDIR)/kernel/*.o $(OBJDIR)/kernel/kernel8.*
 	rm -rf $(OBJDIR)/lib/*.o
 	rm -rf $(OBJDIR)/kernel8.img
-
-qemu: all
-	$(QEMU) -M raspi3b -kernel kernel8.img -display none -serial null -serial stdio
-
-debug: all
-	$(QEMU) -M raspi3b -kernel kernel8.img -display none -s -S -serial null -serial stdio

@@ -4,13 +4,18 @@
 #include <include/string.h>
 #include <include/types.h>
 
-#define PM_PASSWORD 0x5a000000
-#define PM_RSTC 0x3F10001c
-#define PM_WDOG 0x3F100024
+#define PM_PASSWORD 0x5A000000
+#define PM_RSTC_WRCFG_CLR 0xFFFFFFCF
+#define PM_RSTC 0xFE10001C
+#define PM_WDOG 0xFE100024
 
 void reset(uint32_t tick){ // reboot after watchdog timer expire
-  mmio_write(PM_RSTC, PM_PASSWORD | 0x20); // full reset
-  mmio_write(PM_WDOG, PM_PASSWORD | tick); // number of watchdog tick
+    uint32_t t = mmio_read(PM_RSTC);
+    t &= PM_RSTC_WRCFG_CLR;
+    t |= 0x20;
+    mmio_write(PM_WDOG, PM_PASSWORD | tick); // number of watchdog tick
+    mmio_write(PM_RSTC, PM_PASSWORD | t); // full reset
+    for (;;) {}
 }
 
 char getchar() {

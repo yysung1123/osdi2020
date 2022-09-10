@@ -6,7 +6,7 @@ void mmio_write(uint64_t, uint32_t);
 uint32_t mmio_read(uint64_t);
 
 enum {
-    PERIPHERAL_BASE = 0x3f000000
+    PERIPHERAL_BASE = 0xFE000000
 };
 
 enum {
@@ -20,4 +20,10 @@ enum {
     AUX_MU_LSR_REG = AUX_BASE + 0x54,
     AUX_MU_CNTL_REG = AUX_BASE + 0x60,
     AUX_MU_BAUD_REG = AUX_BASE + 0x68
+};
+
+enum {
+    GPIO_BASE = PERIPHERAL_BASE + 0x200000,
+    GPFSEL1 = GPIO_BASE + 0x4,
+    GPIO_PUP_PDN_CNTRL_REG0 = GPIO_BASE + 0xE4
 };
