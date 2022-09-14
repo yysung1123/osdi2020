@@ -29,4 +29,5 @@ kernel_with_addr: kernel/kernel8.$(ADDR).elf
 clean:
 	rm -rf $(OBJDIR)/kernel/*.o $(OBJDIR)/kernel/kernel8.*
 	rm -rf $(OBJDIR)/lib/*.o
+	rm -rf $(OBJDIR)/user/*.o
 	rm -rf $(OBJDIR)/kernel8.img

@@ -2,6 +2,10 @@
 #include <include/mmio.h>
 #include <include/types.h>
 #include <include/mbox.h>
+#include <include/irq.h>
+#include <include/printk.h>
+
+static struct UARTIORingBuffer pl011_inbuf, pl011_outbuf;
 
 int32_t mini_uart_read() {
     while (!(mmio_read(AUX_MU_LSR_REG) & 1)) {}
@@ -92,6 +96,9 @@ void pl011_uart_init() {
     // 8 bits, enable FIFOs, no parity
     mmio_write(PL011_UART_LCRH, 0x70);
 
+    // enable rx interrupt
+    pl011_uart_enable_rx_interrupt();
+
     // set CR to enable UART
     // enable Receive, Transmit, UART
     mmio_write(PL011_UART_CR, 0x301);
@@ -99,22 +106,46 @@ void pl011_uart_init() {
     // set GPIO
     mmio_write(GPIO_PUP_PDN_CNTRL_REG0, (mmio_read(GPIO_PUP_PDN_CNTRL_REG0) & 0x0fffffff) | 0x00000000);
     mmio_write(GPFSEL1, (mmio_read(GPFSEL1) & 0xfffc0fff) | 0x00024000);
+
+    // set UART interrupt
+    mmio_write(IRQ_ENABLE_2, 1 << 25);
+
+    // print init uart done information
+    pl011_uart_printk_time("Init PL011 UART done\n");
 }
 
-int32_t pl011_uart_read() {
-    while (mmio_read(PL011_UART_FR) & (1 << 4)) {}
-    return mmio_read(PL011_UART_DR);
+ssize_t pl011_uart_read(void *buf, size_t count) {
+    ssize_t num_read;
+    for (num_read = 0; num_read < count && !ringbuf_empty(&pl011_inbuf); ++num_read) {
+        *((uint8_t *)buf + num_read) = ringbuf_pop(&pl011_inbuf);
+    }
+
+    pl011_uart_enable_rx_interrupt();
+    return num_read;
 }
 
-void pl011_uart_write(char c) {
+ssize_t pl011_uart_write(const void *buf, size_t count) {
+    ssize_t num_write;
+    for (num_write = 0; num_write < count && !ringbuf_full(&pl011_outbuf); ++num_write) {
+        ringbuf_push(&pl011_outbuf, *((uint8_t *)buf + num_write));
+    }
+
+    pl011_uart_enable_tx_interrupt();
+    return num_write;
+}
+
+void pl011_uart_write_polling(char c) {
     while (mmio_read(PL011_UART_FR) & (1 << 5)) {}
     mmio_write(PL011_UART_DR, c);
 }
 
 char pl011_uart_getchar() {
-    char c = pl011_uart_read();
+    char buf[1];
+    while (pl011_uart_read(&buf, 1) != 1) {};
+
+    char c = buf[0];
     if (c == '\r') c = '\n';
-    pl011_uart_write(c);
+    pl011_uart_putchar(c);
 
     return c;
 }
@@ -131,7 +162,8 @@ void pl011_uart_gets_s(char *buf, size_t len) {
 }
 
 void pl011_uart_putchar(char c) {
-    pl011_uart_write(c);
+    char buf[1] = {c};
+    while (pl011_uart_write(buf, 1) != 1) {}
 }
 
 void pl011_uart_puts(const char *buf) {
@@ -141,4 +173,75 @@ void pl011_uart_puts(const char *buf) {
     }
 
     pl011_uart_putchar('\n');
+}
+
+void pl011_uart_enable_tx_interrupt() {
+    *(volatile uint32_t *)PL011_UART_IMSC |= PL011_UART_IMSC_TXIM;
+}
+
+void pl011_uart_disable_tx_interrupt() {
+    *(volatile uint32_t *)PL011_UART_IMSC &= ~PL011_UART_IMSC_TXIM;
+}
+
+void pl011_uart_enable_rx_interrupt() {
+    *(volatile uint32_t *)PL011_UART_IMSC |= PL011_UART_IMSC_RXIM;
+}
+
+void pl011_uart_disable_rx_interrupt() {
+    *(volatile uint32_t *)PL011_UART_IMSC &= ~PL011_UART_IMSC_RXIM;
+}
+
+void pl011_uart_intr() {
+    uint32_t status = mmio_read(PL011_UART_MIS);
+    if (status & PL011_UART_MIS_RXMIS) {
+        if (!ringbuf_full(&pl011_inbuf)) {
+            while (!ringbuf_full(&pl011_inbuf) && !(mmio_read(PL011_UART_FR) & PL011_UART_FR_RXFE)) {
+                uint8_t data = (uint8_t)mmio_read(PL011_UART_DR);
+                ringbuf_push(&pl011_inbuf, data);
+            }
+
+            if (ringbuf_full(&pl011_inbuf)) {
+                pl011_uart_disable_rx_interrupt(); // disable interrupt until inbuf is not full
+            }
+        }
+    }
+
+    if (status & PL011_UART_MIS_TXMIS) {
+        if (!ringbuf_empty(&pl011_outbuf)) {
+            while (!ringbuf_empty(&pl011_outbuf) && !(mmio_read(PL011_UART_FR) & PL011_UART_FR_TXFF)) {
+                uint8_t data = ringbuf_pop(&pl011_outbuf);
+                mmio_write(PL011_UART_DR, (uint32_t)data);
+            }
+
+            if (ringbuf_empty(&pl011_outbuf)) {
+                pl011_uart_disable_tx_interrupt(); // disable interrupt until outbuf is not empty
+            }
+        }
+    }
+}
+
+bool ringbuf_empty(struct UARTIORingBuffer *ringbuf) {
+    __sync_synchronize();
+    return ringbuf->wpos == ringbuf->rpos;
+}
+
+bool ringbuf_full(struct UARTIORingBuffer *ringbuf) {
+    __sync_synchronize();
+    return (ringbuf->wpos + 1) % UART_IOBUFSIZE == ringbuf->rpos;
+}
+
+// assume ringbuf is not full
+// should check ringbuf_full before calling ringbuf_push
+void ringbuf_push(struct UARTIORingBuffer *ringbuf, uint8_t elem) {
+    ringbuf->buf[ringbuf->wpos] = elem;
+    ringbuf->wpos = (ringbuf->wpos + 1) % UART_IOBUFSIZE;
+}
+
+// assume ringbuf is not empty
+// should check ringbuf_empty before calling ringbuf_pop
+uint8_t ringbuf_pop(struct UARTIORingBuffer *ringbuf) {
+    uint8_t elem = ringbuf->buf[ringbuf->rpos];
+    ringbuf->rpos = (ringbuf->rpos + 1) % UART_IOBUFSIZE;
+
+    return elem;
 }
