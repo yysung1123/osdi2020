@@ -95,6 +95,10 @@ void pl011_uart_init() {
     // set CR to enable UART
     // enable Receive, Transmit, UART
     mmio_write(PL011_UART_CR, 0x301);
+
+    // set GPIO
+    mmio_write(GPIO_PUP_PDN_CNTRL_REG0, (mmio_read(GPIO_PUP_PDN_CNTRL_REG0) & 0x0fffffff) | 0x00000000);
+    mmio_write(GPFSEL1, (mmio_read(GPFSEL1) & 0xfffc0fff) | 0x00024000);
 }
 
 int32_t pl011_uart_read() {
