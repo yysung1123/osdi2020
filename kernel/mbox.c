@@ -8,9 +8,9 @@ void mailbox_call(uintptr_t mbox_addr, int32_t ch) {
     // The lower 4 bits of mbox_addr should be zero
     msg |= ch;
     do {
-        while (mmio_read(MAILBOX_STATUS) == MAILBOX_FULL) {}
+        while (mmio_read(MAILBOX_STATUS) & MAILBOX_FULL) {}
         mmio_write(MAILBOX_WRITE, msg);
-        while (mmio_read(MAILBOX_STATUS) == MAILBOX_EMPTY) {}
+        while (mmio_read(MAILBOX_STATUS) & MAILBOX_EMPTY) {}
         res = mmio_read(MAILBOX_READ);
     } while (msg != res);
 }
