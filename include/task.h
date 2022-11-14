@@ -16,6 +16,12 @@ typedef enum {
     TASK_ZOMBIE
 } TaskState;
 
+typedef enum {
+    HIGH = 0,
+    MEDIUM,
+    LOW
+} Priority;
+
 typedef struct cpu_context {
     uint64_t x19;
     uint64_t x20;
@@ -39,6 +45,7 @@ typedef struct task_struct {
     bool resched;
     bool sigpending;
     sigset_t signal;
+    Priority priority;
 } task_struct;
 
 typedef task_struct task_t;
@@ -50,6 +57,7 @@ typedef struct {
 
 void task_init();
 int32_t privilege_task_create(void(*func)());
+int32_t privilege_task_create_priority(void(*func)(), Priority);
 void context_switch(task_t *);
 task_t* get_task(pid_t);
 void task1();
@@ -72,6 +80,8 @@ int32_t do_fork(struct TrapFrame *);
 void do_exit();
 void zombie_reaper();
 uint32_t num_runnable_tasks();
+void setpriority(pid_t pid, Priority priority);
+Priority getpriority(pid_t pid);
 
 static inline task_t* get_current() {
     task_t *res;
