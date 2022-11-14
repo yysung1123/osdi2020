@@ -9,7 +9,7 @@
 static task_t task_pool[NR_TASKS];
 static uint8_t kstack_pool[NR_TASKS][STACK_SIZE];
 static uint8_t ustack_pool[NR_TASKS][STACK_SIZE];
-runqueue_t rq;
+runqueue_t rq[3];
 
 void task_init() {
     for (pid_t i = 0; i < NR_TASKS; ++i) {
@@ -19,6 +19,7 @@ void task_init() {
 
     // 0-th task is main() thread
     task_pool[0].state = TASK_RUNNING;
+    task_pool[0].priority = LOW;
     __asm__ volatile("msr tpidr_el1, %0"
                      :: "r"(&task_pool[0]));
 
@@ -27,6 +28,10 @@ void task_init() {
 }
 
 int32_t privilege_task_create(void(*func)()) {
+    return privilege_task_create_priority(func, HIGH);
+}
+
+int32_t privilege_task_create_priority(void(*func)(), Priority priority) {
     /* find a free task structure */
     pid_t pid;
     task_t *ts = NULL;
@@ -41,12 +46,13 @@ int32_t privilege_task_create(void(*func)()) {
 
     ts->id = pid;
     ts->state = TASK_RUNNABLE;
+    ts->priority = priority;
     ts->cpu_context.pc = (uint64_t)func;
     ts->cpu_context.sp = (uint64_t)(get_kstacktop_by_id(pid));
     ts->sigpending = false;
     ts->signal = 0;
 
-    runqueue_push(&rq, ts);
+    runqueue_push(&rq[ts->priority], ts);
 
     return pid;
 }
@@ -193,5 +199,18 @@ void zombie_reaper() {
 }
 
 uint32_t num_runnable_tasks() {
-    return runqueue_size(&rq);
+    uint32_t num_tasks = 0;
+    for (Priority pri = 0; pri < 3; ++pri) {
+        num_tasks += runqueue_size(&rq[pri]);
+    }
+
+    return num_tasks;
+}
+
+void setpriority(pid_t pid, Priority priority) {
+    task_pool[pid].priority = priority;
+}
+
+Priority getpriority(pid_t pid) {
+    return task_pool[pid].priority;
 }
