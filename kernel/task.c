@@ -12,7 +12,7 @@ static uint8_t ustack_pool[NR_TASKS][STACK_SIZE];
 runqueue_t rq;
 
 void task_init() {
-    for (uint32_t i = 0; i < NR_TASKS; ++i) {
+    for (pid_t i = 0; i < NR_TASKS; ++i) {
         memset(&(task_pool[i]), 0, sizeof(task_t));
         task_pool[i].state = TASK_FREE;
     }
@@ -28,7 +28,7 @@ void task_init() {
 
 int32_t privilege_task_create(void(*func)()) {
     /* find a free task structure */
-    uint32_t pid;
+    pid_t pid;
     task_t *ts = NULL;
     for (pid = 0; pid < NR_TASKS; ++pid) {
         if (task_pool[pid].state == TASK_FREE) {
@@ -56,7 +56,7 @@ void context_switch(task_t *next){
     switch_to(prev, next);
 }
 
-task_t* get_task(uint32_t pid) {
+task_t* get_task(pid_t pid) {
     return &task_pool[pid];
 }
 
@@ -124,24 +124,24 @@ void check_resched() {
     schedule();
 }
 
-uint32_t do_get_taskid() {
+pid_t do_get_taskid() {
     task_t *cur = get_current();
     return cur->id;
 }
 
-uint8_t* get_kstack_by_id(uint32_t id) {
+uint8_t* get_kstack_by_id(pid_t id) {
     return ((uint8_t *)&kstack_pool + id * STACK_SIZE);
 }
 
-uint8_t* get_ustack_by_id(uint32_t id) {
+uint8_t* get_ustack_by_id(pid_t id) {
     return ((uint8_t *)&ustack_pool + id * STACK_SIZE);
 }
 
-uint8_t* get_kstacktop_by_id(uint32_t id) {
+uint8_t* get_kstacktop_by_id(pid_t id) {
     return ((uint8_t *)&kstack_pool + (id + 1) * STACK_SIZE);
 }
 
-uint8_t* get_ustacktop_by_id(uint32_t id) {
+uint8_t* get_ustacktop_by_id(pid_t id) {
     return ((uint8_t *)&ustack_pool + (id + 1) * STACK_SIZE);
 }
 
@@ -182,7 +182,7 @@ void do_exit() {
 
 void zombie_reaper() {
     while (1) {
-        for (uint32_t pid = 0; pid < NR_TASKS; ++pid) {
+        for (pid_t pid = 0; pid < NR_TASKS; ++pid) {
             if (task_pool[pid].state == TASK_ZOMBIE) {
                 memset(&(task_pool[pid]), 0, sizeof(task_t));
                 pl011_uart_printk_time_polling("zombie reaper: task %d\n", pid);

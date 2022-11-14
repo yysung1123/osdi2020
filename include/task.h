@@ -7,6 +7,8 @@
 #define NR_TASKS 64
 #define STACK_SIZE 4096
 
+typedef uint32_t pid_t;
+
 typedef enum {
     TASK_FREE = 0,
     TASK_RUNNABLE,
@@ -49,7 +51,7 @@ typedef struct {
 void task_init();
 int32_t privilege_task_create(void(*func)());
 void context_switch(task_t *);
-task_t* get_task(uint32_t);
+task_t* get_task(pid_t);
 void task1();
 void task2();
 void task3();
@@ -61,11 +63,11 @@ uint32_t runqueue_size(runqueue_t *);
 extern void switch_to(task_t *, task_t *);
 void do_exec(void(*func)());
 void check_resched();
-uint32_t do_get_taskid();
-uint8_t* get_kstack_by_id(uint32_t);
-uint8_t* get_ustack_by_id(uint32_t);
-uint8_t* get_kstacktop_by_id(uint32_t);
-uint8_t* get_ustacktop_by_id(uint32_t);
+pid_t do_get_taskid();
+uint8_t* get_kstack_by_id(pid_t);
+uint8_t* get_ustack_by_id(pid_t);
+uint8_t* get_kstacktop_by_id(pid_t);
+uint8_t* get_ustacktop_by_id(pid_t);
 int32_t do_fork(struct TrapFrame *);
 void do_exit();
 void zombie_reaper();
