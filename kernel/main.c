@@ -19,7 +19,7 @@ int main() {
 
     // lab4 elective 1
     privilege_task_create(&user_test);
-    privilege_task_create(&zombie_reaper);
+    privilege_task_create_priority(&zombie_reaper, HIGH);
 
     idle();
 }
