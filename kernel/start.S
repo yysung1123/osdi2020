@@ -32,24 +32,8 @@ el1_start:
     (MAIR_NORMAL_NOCACHE << (MAIR_IDX_NORMAL_NOCACHE * 8)) \
   )
   msr MAIR_EL1, x0
-// set up identity mapping
-  mov x0, 0 // PGD's page frame at 0x0
-  mov x1, 0x1000 // PUD's page frame at 0x1000
-
-  ldr x2, = BOOT_PGD_ATTR
-  orr x2, x1, x2 // combine the physical address of next level page with attribute.
-  str x2, [x0]
-
-  ldr x2, = BOOT_PUD_ATTR
-  mov x3, 0x00000000
-  orr x3, x2, x3
-  str x3, [x1] // 1st 1GB mapped by the 1st entry of PUD
-  mov x3, 0x40000000
-  orr x3, x2, x3
-  str x3, [x1, 8] // 2nd 1GB mapped by the 2nd entry of PUD
-
-  msr TTBR0_EL1, x0 // load PGD to the buttom translation based register.
-  msr TTBR1_EL1, x0 // also load PGD to the upper translation based register.
+// set up finer granularity kernel mapping
+  bl page_table_create
 
   mrs x2, SCTLR_EL1
   orr x2, x2, 1
@@ -77,6 +61,58 @@ boot_rest:
   bl main
 loop:
   b loop
+
+page_table_create:
+  ldr x0, = pg_dir
+  and x0, x0, 0x0000ffffffffffff // convert PGD from upper address space to lower address space
+  add x1, x0, 0x1000 // PUD
+  add x2, x0, 0x2000 // PMD
+
+  // the first entry of PGD -> PUD
+  ldr x3, = BOOT_PGD_ATTR
+  orr x3, x1, x3 // combine the physical address of next level page with attribute.
+  str x3, [x0]
+
+  // the first entry of PUD -> PMD
+  ldr x3, = BOOT_PUD_ATTR
+  orr x3, x3, x2
+  str x3, [x1]
+
+  // the second entry of PUD -> normal block
+  ldr x3, = BOOT_PUD_ATTR_BLOCK
+  mov x4, 0x40000000 // block's physical address
+  orr x3, x3, x4
+  str x3, [x1, 8]
+
+  // the [0, 512 - 8)th entries of PMD -> normal block
+  mov x4, xzr
+pmd_normal_block_create_start:
+  cmp x4, (512 - 8)
+  bge pmd_normal_block_create_end
+  ldr x3, = BOOT_PMD_ATTR_NORMAL
+  lsl x5, x4, 21 // block's physical address, x4 * 2MB
+  orr x3, x3, x5
+  str x3, [x2, x4, lsl#3]
+  add x4, x4, 1
+  b pmd_normal_block_create_start
+pmd_normal_block_create_end:
+
+  // the [512 - 8, 512)th entries of PMD -> device block
+  mov x4, 512 - 8
+pmd_device_block_create_start:
+  cmp x4, 512
+  bge pmd_device_block_create_end
+  ldr x3, = BOOT_PMD_ATTR_DEVICE
+  lsl x5, x4, 21 // block's physical address, x4 * 2MB
+  orr x3, x3, x5
+  str x3, [x2, x4, lsl#3]
+  add x4, x4, 1
+  b pmd_device_block_create_start
+pmd_device_block_create_end:
+
+  msr TTBR0_EL1, x0 // load PGD to the buttom translation based register.
+  msr TTBR1_EL1, x0 // also load PGD to the upper translation based register.
+  ret
 
 .bss
   .align 12
