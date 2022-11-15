@@ -3,8 +3,8 @@
 #include <include/types.h>
 
 enum {
-    PERIPHERAL_BASE = 0x3f000000,
-    ARM_LOCAL_PERIPERHAL_BASE = 0x40000000
+    PERIPHERAL_BASE = 0xffff00003f000000,
+    ARM_LOCAL_PERIPERHAL_BASE = 0xffff000040000000
 };
 
 enum {

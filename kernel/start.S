@@ -9,16 +9,6 @@ _start:
   wfe
   b 1b
 2:
-// Initialize the BSS segment
-  ldr x1, = _BSS_START
-  ldr x2, = _BSS_END
-3:
-  cmp x1, x2
-  bge 4f
-  str xzr, [x1]
-  add x1, x1, 8
-  b 3b
-4:
 // EL2 to EL1
   mov x0, xzr
   msr SCTLR_EL1, x0 // disable MMU
@@ -29,6 +19,7 @@ _start:
   mov x0, #5
   msr SPSR_EL2, x0 // EL1h
   ldr x0, = el1_start
+  and x0, x0, 0x0000ffffffffffff // convert el1_start from upper address space to lower address space
   msr ELR_EL2, x0
   eret
 el1_start:
@@ -58,10 +49,25 @@ el1_start:
   str x3, [x1, 8] // 2nd 1GB mapped by the 2nd entry of PUD
 
   msr TTBR0_EL1, x0 // load PGD to the buttom translation based register.
+  msr TTBR1_EL1, x0 // also load PGD to the upper translation based register.
 
   mrs x2, SCTLR_EL1
   orr x2, x2, 1
   msr SCTLR_EL1, x2 // enable MMU, cache remains disabled
+
+  ldr x2, = boot_rest // indirect branch to the virtual address
+  br x2
+boot_rest:
+// Initialize the BSS segment
+  ldr x1, = _BSS_START
+  ldr x2, = _BSS_END
+3:
+  cmp x1, x2
+  bge 4f
+  str xzr, [x1]
+  add x1, x1, 8
+  b 3b
+4:
 // load exception_table to VBAR_EL1
   ldr x0, = exception_table
   msr VBAR_EL1, x0
