@@ -35,6 +35,12 @@ el1_start:
 // set up TCR_EL1
   ldr x0, = TCR_CONFIG_DEFAULT
   msr TCR_EL1, x0
+// set up MAIR_EL1
+  ldr x0, =( \
+    (MAIR_DEVICE_nGnRnE << (MAIR_IDX_DEVICE_nGnRnE * 8)) | \
+    (MAIR_NORMAL_NOCACHE << (MAIR_IDX_NORMAL_NOCACHE * 8)) \
+  )
+  msr MAIR_EL1, x0
 // load exception_table to VBAR_EL1
   ldr x0, = exception_table
   msr VBAR_EL1, x0
