@@ -41,6 +41,27 @@ el1_start:
     (MAIR_NORMAL_NOCACHE << (MAIR_IDX_NORMAL_NOCACHE * 8)) \
   )
   msr MAIR_EL1, x0
+// set up identity mapping
+  mov x0, 0 // PGD's page frame at 0x0
+  mov x1, 0x1000 // PUD's page frame at 0x1000
+
+  ldr x2, = BOOT_PGD_ATTR
+  orr x2, x1, x2 // combine the physical address of next level page with attribute.
+  str x2, [x0]
+
+  ldr x2, = BOOT_PUD_ATTR
+  mov x3, 0x00000000
+  orr x3, x2, x3
+  str x3, [x1] // 1st 1GB mapped by the 1st entry of PUD
+  mov x3, 0x40000000
+  orr x3, x2, x3
+  str x3, [x1, 8] // 2nd 1GB mapped by the 2nd entry of PUD
+
+  msr TTBR0_EL1, x0 // load PGD to the buttom translation based register.
+
+  mrs x2, SCTLR_EL1
+  orr x2, x2, 1
+  msr SCTLR_EL1, x2 // enable MMU, cache remains disabled
 // load exception_table to VBAR_EL1
   ldr x0, = exception_table
   msr VBAR_EL1, x0

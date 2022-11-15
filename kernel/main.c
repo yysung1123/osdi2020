@@ -15,6 +15,9 @@ int main() {
     task_init();
     core_timer_init();
 
+    // TODO: set up EL0 pages
+    while (1) {}
+
     // lab4 elective 3
     privilege_task_create(&user_test);
 
