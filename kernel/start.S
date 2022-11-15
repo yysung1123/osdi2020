@@ -1,3 +1,5 @@
+#include <include/asm/pgtable.h>
+
 .section ".text.start"
 _start:
   mrs x0, mpidr_el1
@@ -30,12 +32,15 @@ _start:
   msr ELR_EL2, x0
   eret
 el1_start:
-// Set the stack pointer
-  ldr x0, = _el1_stack_top
-  mov sp, x0
+// set up TCR_EL1
+  ldr x0, = TCR_CONFIG_DEFAULT
+  msr TCR_EL1, x0
 // load exception_table to VBAR_EL1
   ldr x0, = exception_table
   msr VBAR_EL1, x0
+// Set the stack pointer
+  ldr x0, = _el1_stack_top
+  mov sp, x0
   bl main
 loop:
   b loop
