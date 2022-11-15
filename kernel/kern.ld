@@ -14,6 +14,13 @@ SECTIONS
     *(.bss .bss.*)
     _BSS_END = .;
   }
+
+  . = ALIGN(0x1000);
+  pg_dir = .;
+  .data.pg : {
+    /* (1 * PGD) + (1 * PUD) + (1 * PMD) */
+    . += (1 + 1 + 1) * 0x1000;
+  }
   _KERNEL_END = .;
 }
 
