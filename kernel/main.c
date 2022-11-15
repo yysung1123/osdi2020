@@ -5,11 +5,13 @@
 #include <include/sched.h>
 #include <include/timer.h>
 #include <include/test_case.h>
+#include <include/mm.h>
 
 int main() {
     irq_disable();
 
     pl011_uart_init();
+    mem_init();
     fb_init();
     fb_show_splash_image();
     task_init();
