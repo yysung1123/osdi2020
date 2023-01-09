@@ -1,10 +1,16 @@
 #include <include/mm.h>
+#include <include/mm_types.h>
 #include <include/memory.h>
 #include <include/pgtable-hwdef.h>
+#include <include/pgtable-types.h>
+#include <include/pgtable.h>
+#include <include/asm/tlbflush.h>
 #include <include/types.h>
 #include <include/printk.h>
 #include <include/string.h>
 #include <include/mmio.h>
+#include <include/assert.h>
+#include <include/error.h>
 
 static kernaddr_t nextfree; // virtual address of next byte of free memory
 static page_t *page_free_list; // free list of physical pages
@@ -37,6 +43,8 @@ void mem_init() {
     memset(pages, 0, sizeof(page_t) * NPAGES);
     
     page_init();
+
+    pgtable_test();
 }
 
 void page_init() {
@@ -83,4 +91,247 @@ void page_decref(page_t *pp) {
 
 physaddr_t page2pa(page_t *pp) {
 	return (physaddr_t)((uintptr_t)(pp - pages) << PAGE_SHIFT);
+}
+
+page_t* pa2page(physaddr_t pa) {
+    if (PGNUM(pa) >= NPAGES) {
+        panic("pa2page called with invalid pa");
+    }
+    return &pages[PGNUM(pa)];
+}
+
+void pgtable_test() {
+    mm_struct mm_instance;
+    mm_struct *mm = &mm_instance;
+    mm->pgd = pgd_alloc();
+    assert(mm->pgd);
+
+    virtaddr_t va = 0x123456789000;
+    pgd_t *pgd = pgd_offset(mm, va);
+    assert((pgd - mm->pgd) == 36);
+    pl011_uart_printk_polling("pgd_offset() succeeded!\n");
+
+    assert(pgd_val(*(mm->pgd)) == 0);
+    pud_t *pud = pud_alloc(mm, pgd, va);
+    assert((pgd_val(*pgd) & ~PTE_ADDR_MASK) == PD_TABLE);
+    pl011_uart_printk_polling("pud_alloc() succeeded!\n");
+
+    assert(pud_val(*pud) == 0);
+    pmd_t *pmd = pmd_alloc(mm, pud, va);
+    assert((pud_val(*pud) & ~PTE_ADDR_MASK) == PD_TABLE);
+    pl011_uart_printk_polling("pmd_alloc() succeeded!\n");
+
+    assert(pmd_val(*pmd) == 0);
+    pte_t *pte = pte_alloc(mm, pmd, va);
+    assert((pmd_val(*pmd) & ~PTE_ADDR_MASK) == PD_TABLE);
+    pl011_uart_printk_polling("pte_alloc() succeeded!\n");
+
+    assert(walk_to_pte(mm, va) == pte);
+    pl011_uart_printk_polling("walk_to_pte() succeeded!\n");
+
+    page_t *pp = page_alloc(0);
+    assert(pp);
+    assert(pp->pp_ref == 0);
+    memset((void *)page2kva(pp), 0x55, PAGE_SIZE);
+    pgprot_t prot = __pgprot(PTE_ATTR_NORMAL);
+    assert(insert_page(mm, pp, va, prot) == 0);
+    assert(pp->pp_ref == 1);
+
+    __asm__ volatile("msr TTBR0_EL1, %0"
+                     :: "r"(mm->pgd));
+    flush_tlb_all();
+
+    assert(*(uint64_t *)va == 0x5555555555555555);
+    pl011_uart_printk_polling("change TTBR0_EL1 succeeded!\n");
+
+    memset((void *)va, 0xaa, PAGE_SIZE);
+    assert(*(uint64_t *)page2kva(pp) == 0xaaaaaaaaaaaaaaaa);
+    pl011_uart_printk_polling("write virtual address succeeded!\n");
+
+    virtaddr_t va2 = 0x987654321000;
+    assert(insert_page(mm, pp, va2, prot) == 0);
+    assert(pp->pp_ref == 2);
+    flush_tlb_all();
+    assert(*(uint64_t *)va2 == 0xaaaaaaaaaaaaaaaa);
+    pl011_uart_printk_polling("page sharing succeeded!\n");
+
+    unmap_page(mm, va2);
+    assert(pp->pp_ref == 1);
+    assert(follow_pte(mm, va2, &pte) == -E_INVAL);
+    assert(follow_pte(mm, va, &pte) == 0);
+    pl011_uart_printk_polling("unmap_page() succeeded!\n");
+
+    free_pgtables(mm);
+    assert(pa2page(PADDR((kernaddr_t)mm->pgd))->pp_ref == 0);
+    assert(pp->pp_ref == 0);
+    assert(follow_pte(mm, va, &pte) == -E_INVAL);
+    pl011_uart_printk_polling("free_pgtables() succeeded!\n");
+}
+
+int32_t __pud_alloc(mm_struct *mm, pgd_t *pgd, virtaddr_t address) {
+    page_t *pp = page_alloc(ALLOC_ZERO);
+    pud_t *new = (pud_t *)page2pa(pp);
+    if (!new) {
+        return -E_NO_MEM;
+    }
+
+    pgdval_t pgdval = PGD_TYPE_TABLE;
+    *pgd = __pgd((pgdval_t)new | pgdval);
+    pp->pp_ref++;
+
+    return 0;
+}
+
+int32_t __pmd_alloc(mm_struct *mm, pud_t *pud, virtaddr_t address) {
+    page_t *pp = page_alloc(ALLOC_ZERO);
+    pud_t *new = (pud_t *)page2pa(pp);
+    if (!new) {
+        return -E_NO_MEM;
+    }
+
+    pudval_t pudval = PUD_TYPE_TABLE;
+    *pud = __pud((pudval_t)new | pudval);
+    pp->pp_ref++;
+
+    return 0;
+}
+
+int32_t __pte_alloc(mm_struct *mm, pmd_t *pmd, virtaddr_t address) {
+    page_t *pp = page_alloc(ALLOC_ZERO);
+    pmd_t *new = (pmd_t *)page2pa(pp);
+    if (!new) {
+        return -E_NO_MEM;
+    }
+
+    pmdval_t pmdval = PMD_TYPE_TABLE;
+    *pmd = __pmd((pmdval_t)new | pmdval);
+    pp->pp_ref++;
+
+    return 0;
+}
+
+pte_t* walk_to_pte(mm_struct *mm, virtaddr_t addr) {
+    pgd_t *pgd;
+    pud_t *pud;
+    pmd_t *pmd;
+    pte_t *pte;
+
+    pgd = pgd_offset(mm, addr);
+    pud = pud_alloc(mm, pgd, addr);
+    pmd = pmd_alloc(mm, pud, addr);
+    pte = pte_alloc(mm, pmd, addr);
+
+    return pte;
+}
+
+int32_t insert_page(mm_struct *mm, page_t *pp, virtaddr_t addr, pgprot_t prot) {
+    pte_t *pte = walk_to_pte(mm, addr);
+    if (!pte) return -E_NO_MEM;
+    if (!pte_none(*pte)) return -E_BUSY;
+
+    *pte = __pte((pteval_t)page2pa(pp) | pgprot_val(prot) | PD_TABLE);
+    pp->pp_ref++;
+    return 0;
+}
+
+int32_t follow_pte(mm_struct *mm, virtaddr_t address, pte_t **ptepp) {
+    pgd_t *pgd;
+    pud_t *pud;
+    pmd_t *pmd;
+    pte_t *ptep;
+
+    pgd = pgd_offset(mm, address);
+    if (pgd_none(*pgd)) {
+        goto out;
+    }
+
+    pud = pud_offset(pgd, address);
+    if (pud_none(*pud)) {
+        goto out;
+    }
+
+    pmd = pmd_offset(pud, address);
+    if (pmd_none(*pmd)) {
+        goto out;
+    }
+
+    ptep = pte_offset(pmd, address);
+    if (pte_none(*ptep)) {
+        goto out;
+    }
+
+    *ptepp = ptep;
+
+    return 0;
+out:
+    return -E_INVAL;
+}
+
+void unmap_page(mm_struct *mm, virtaddr_t addr) {
+    pte_t *pte;
+    int32_t ret = follow_pte(mm, addr, &pte);
+    if (ret) return;
+
+    physaddr_t pa = __pte_to_phys(*pte);
+    page_t *pp = pa2page(pa);
+
+    page_decref(pp);
+    *pte = __pte(0);
+}
+
+void free_pte(pte_t *pte_base) {
+    for (size_t idx = 0; idx < PAGE_SIZE / sizeof(pte_t); ++idx) {
+        pte_t *pte = pte_base + idx;
+        if (!pte_none(*pte)) {
+            page_t *pp = pa2page(__pte_to_phys(*pte));
+            page_decref(pp);
+            *pte = __pte(0);
+        }
+    }
+
+    page_t *pp = pa2page(PADDR((kernaddr_t)pte_base));
+    page_decref(pp);
+}
+
+void free_pmd(pmd_t *pmd_base) {
+    for (size_t idx = 0; idx < PAGE_SIZE / sizeof(pmd_t); ++idx) {
+        pmd_t *pmd = pmd_base + idx;
+        if (!pmd_none(*pmd)) {
+            free_pte(pmd_pgtable(pmd));
+            *pmd = __pmd(0);
+        }
+    }
+
+    page_t *pp = pa2page(PADDR((kernaddr_t)pmd_base));
+    page_decref(pp);
+}
+
+void free_pud(pud_t *pud_base) {
+    for (size_t idx = 0; idx < PAGE_SIZE / sizeof(pud_t); ++idx) {
+        pud_t *pud = pud_base + idx;
+        if (!pud_none(*pud)) {
+            free_pmd(pud_pgtable(pud));
+            *pud = __pud(0);
+        }
+    }
+
+    page_t *pp = pa2page(PADDR((kernaddr_t)pud_base));
+    page_decref(pp);
+}
+
+void free_pgd(mm_struct *mm) {
+    for (size_t idx = 0; idx < PAGE_SIZE / sizeof(pgd_t); ++idx) {
+        pgd_t *pgd = mm->pgd + idx;
+        if (!pgd_none(*pgd)) {
+            free_pud(pgd_pgtable(pgd));
+            *pgd = __pgd(0);
+        }
+    }
+
+    page_t *pp = pa2page(PADDR((kernaddr_t)mm->pgd));
+    page_decref(pp);
+}
+
+void free_pgtables(mm_struct *mm) {
+    free_pgd(mm);
 }
