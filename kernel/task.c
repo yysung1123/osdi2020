@@ -22,6 +22,7 @@ void task_init() {
     task_pool[0].priority = LOW;
     __asm__ volatile("msr tpidr_el1, %0"
                      :: "r"(&task_pool[0]));
+    mm_alloc_pgd(&task_pool[0].mm);
 
     // print init task done information
     pl011_uart_printk_time_polling("Init task done\n");
@@ -49,6 +50,9 @@ int32_t privilege_task_create_priority(void(*func)(), Priority priority) {
     ts->priority = priority;
     ts->cpu_context.pc = (uint64_t)func;
     ts->cpu_context.sp = (uint64_t)(get_kstacktop_by_id(pid));
+
+    // userspace paging
+    mm_alloc_pgd(&ts->mm);
 
     runqueue_push(&rq[ts->priority], ts);
 

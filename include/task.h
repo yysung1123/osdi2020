@@ -3,9 +3,14 @@
 #include <include/exc.h>
 #include <include/types.h>
 #include <include/signal.h>
+#include <include/mm.h>
+#include <include/mm_types.h>
+#include <include/error.h>
 
 #define NR_TASKS 64
 #define STACK_SIZE 4096
+#define USTACKTOP 0x0000ffffffffe000
+#define USTACK (USTACKTOP - STACK_SIZE)
 
 typedef uint32_t pid_t;
 
@@ -46,6 +51,7 @@ typedef struct task_struct {
     bool sigpending;
     sigset_t signal;
     Priority priority;
+    mm_struct mm;
 } task_struct;
 
 typedef task_struct task_t;
@@ -88,4 +94,11 @@ static inline task_t* get_current() {
     __asm__ inline("mrs %0, tpidr_el1"
                    : "=r"(res));
     return res;
+}
+
+static inline int mm_alloc_pgd(mm_struct *mm) {
+    mm->pgd = pgd_alloc(mm);
+    if (!mm->pgd) return -E_NO_MEM;
+
+    return 0;
 }
