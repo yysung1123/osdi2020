@@ -4,7 +4,6 @@
 #include <include/task.h>
 #include <include/sched.h>
 #include <include/timer.h>
-#include <include/test_case.h>
 #include <include/mm.h>
 
 int main() {
@@ -22,8 +21,6 @@ int main() {
     // TODO: set up EL0 pages
     while (1) {}
 
-    // lab4 elective 1
-    privilege_task_create(&user_test);
     privilege_task_create_priority(&zombie_reaper, HIGH);
 
     idle();

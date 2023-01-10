@@ -66,9 +66,6 @@ int32_t privilege_task_create(void(*func)());
 int32_t privilege_task_create_priority(void(*func)(), Priority);
 void context_switch(task_t *);
 task_t* get_task(pid_t);
-void task1();
-void task2();
-void task3();
 void runqueue_push(runqueue_t *, task_t *);
 task_t* runqueue_pop(runqueue_t *);
 bool runqueue_empty(runqueue_t *);
@@ -88,6 +85,7 @@ void zombie_reaper();
 uint32_t num_runnable_tasks();
 void setpriority(pid_t pid, Priority priority);
 Priority getpriority(pid_t pid);
+void idle();
 
 static inline task_t* get_current() {
     task_t *res;

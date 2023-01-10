@@ -13,7 +13,6 @@ KERN_OBJS = kernel/start.o \
 	kernel/task.o \
 	kernel/switch_to.o \
 	kernel/sched.o \
-	kernel/test_case.o \
 	kernel/signal.o \
 	kernel/assert.o \
 	kernel/mm.o
@@ -25,32 +24,22 @@ endif
 
 KERN_LDFLAGS = -T kernel/kern.ld
 
-ULIB = lib/printfmt.o \
-	lib/string.o \
-	lib/syscall.o \
-	lib/printf.o \
-	lib/puts.o \
-	lib/putchar.o \
-	lib/gets_s.o \
-	lib/getchar.o
+KLIB = lib/printfmt.o \
+	lib/string.o
 
-USER_OBJS = user/shell.o \
-	user/utask.o
+USER_PROGS = user/shell.bin
 
-kernel/kernel8.elf: $(KERN_OBJS) $(ULIB) $(USER_OBJS)
-	$(LD) $(KERN_LDFLAGS) $(KERN_OBJS) $(ULIB) $(USER_OBJS) -o $@
+include lib/Makefile
+include user/Makefile
 
-kernel/kernel8.%.elf: $(KERN_OBJS) $(ULIB) $(USER_OBJS)
-	$(LD) -Ttext=$* $(KERN_LDFLAGS) $(KERN_OBJS) $(ULIB) $(USER_OBJS) -o $@
+kernel/kernel8.elf: $(KERN_OBJS) $(KLIB) $(USER_PROGS)
+	$(LD) $(KERN_LDFLAGS) $(KERN_OBJS) $(KLIB) $(USER_PROGS) -o $@
+
+kernel/kernel8.%.elf: $(KERN_OBJS) $(KLIB)
+	$(LD) -Ttext=$* $(KERN_LDFLAGS) $(KERN_OBJS) $(KLIB) -o $@
 
 kernel/%.o: kernel/%.S
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 kernel/%.o: kernel/%.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-lib/%.o: lib/%.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-user/%.o: user/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<

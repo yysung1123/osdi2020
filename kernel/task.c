@@ -3,7 +3,6 @@
 #include <include/printk.h>
 #include <include/string.h>
 #include <include/sched.h>
-#include <include/utask.h>
 #include <include/irq.h>
 
 static task_t task_pool[NR_TASKS];
@@ -66,18 +65,6 @@ void context_switch(task_t *next){
 
 task_t* get_task(pid_t pid) {
     return &task_pool[pid];
-}
-
-void task1() {
-    do_exec(&utask1);
-}
-
-void task2() {
-    do_exec(&utask2);
-}
-
-void task3() {
-    do_exec(&utask3);
 }
 
 void runqueue_push(runqueue_t *rq, task_t *ts) {
@@ -215,4 +202,10 @@ void setpriority(pid_t pid, Priority priority) {
 
 Priority getpriority(pid_t pid) {
     return task_pool[pid].priority;
+}
+
+void idle() {
+    while (1) {
+        schedule();
+    }
 }
