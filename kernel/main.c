@@ -18,9 +18,8 @@ int main() {
 
     irq_enable();
 
-    // TODO: set up EL0 pages
-    while (1) {}
-
+    // lab5 required 3
+    privilege_task_create(&user_shell);
     privilege_task_create_priority(&zombie_reaper, HIGH);
 
     idle();

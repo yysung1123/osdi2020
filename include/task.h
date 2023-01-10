@@ -11,6 +11,7 @@
 #define STACK_SIZE 4096
 #define USTACKTOP 0x0000ffffffffe000
 #define USTACK (USTACKTOP - STACK_SIZE)
+#define EXECUTABLE_START 0x400000
 
 typedef uint32_t pid_t;
 
@@ -72,7 +73,7 @@ bool runqueue_empty(runqueue_t *);
 bool runqueue_full(runqueue_t *);
 uint32_t runqueue_size(runqueue_t *);
 extern void switch_to(task_t *, task_t *);
-void do_exec(void(*func)());
+void do_exec(kernaddr_t, size_t);
 void check_resched();
 pid_t do_get_taskid();
 uint8_t* get_kstack_by_id(pid_t);
@@ -86,6 +87,7 @@ uint32_t num_runnable_tasks();
 void setpriority(pid_t pid, Priority priority);
 Priority getpriority(pid_t pid);
 void idle();
+void user_shell();
 
 static inline task_t* get_current() {
     task_t *res;

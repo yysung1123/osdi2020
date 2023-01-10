@@ -14,6 +14,11 @@
 
 #define PTE_ADDR_MASK ((pteval_t)((1ull << (48 - PAGE_SHIFT)) - 1) << PAGE_SHIFT)
 
+#define PD_USER (1ull << 6)
+#define PD_RW (PD_USER)
+#define PD_RO (PD_USER | (1ull << 7))
+#define PD_NX (1ull << 54)
+
 #define PGD_TYPE_TABLE PD_TABLE
 #define PUD_TYPE_TABLE PD_TABLE
 #define PMD_TYPE_TABLE PD_TABLE
