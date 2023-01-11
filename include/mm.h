@@ -33,6 +33,7 @@ int32_t insert_page(mm_struct *, page_t *, virtaddr_t, pgprot_t);
 int32_t follow_pte(mm_struct *, virtaddr_t, pte_t **);
 void unmap_page(mm_struct *, virtaddr_t);
 void free_pgtables(mm_struct *);
+void copy_mm(mm_struct *, mm_struct *);
 
 static inline kernaddr_t page2kva(page_t *pp) {
 	return KADDR(page2pa(pp));

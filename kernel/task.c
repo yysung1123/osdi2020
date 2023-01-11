@@ -9,7 +9,6 @@
 
 static task_t task_pool[NR_TASKS];
 static uint8_t kstack_pool[NR_TASKS][STACK_SIZE];
-static uint8_t ustack_pool[NR_TASKS][STACK_SIZE];
 runqueue_t rq[3];
 
 void task_init() {
@@ -156,16 +155,8 @@ uint8_t* get_kstack_by_id(pid_t id) {
     return ((uint8_t *)&kstack_pool + id * STACK_SIZE);
 }
 
-uint8_t* get_ustack_by_id(pid_t id) {
-    return ((uint8_t *)&ustack_pool + id * STACK_SIZE);
-}
-
 uint8_t* get_kstacktop_by_id(pid_t id) {
     return ((uint8_t *)&kstack_pool + (id + 1) * STACK_SIZE);
-}
-
-uint8_t* get_ustacktop_by_id(pid_t id) {
-    return ((uint8_t *)&ustack_pool + (id + 1) * STACK_SIZE);
 }
 
 int32_t do_fork(struct TrapFrame *tf) {
@@ -175,10 +166,6 @@ int32_t do_fork(struct TrapFrame *tf) {
     task_t *ts_new = get_task(pid_new);
 
     uint8_t *kstacktop_new = get_kstacktop_by_id(ts_new->id);
-    uint8_t *ustack_cur = get_ustack_by_id(cur->id);
-    uint8_t *ustack_new = get_ustack_by_id(ts_new->id);
-    uint8_t *ustacktop_cur = get_ustacktop_by_id(cur->id);
-    uint8_t *ustacktop_new = get_ustacktop_by_id(ts_new->id);
 
     // set cpu_context and trapframe
     extern void ret_to_user();
@@ -187,12 +174,10 @@ int32_t do_fork(struct TrapFrame *tf) {
     ts_new->cpu_context.sp = (uint64_t)tf_new;
 
     // copy user context
-    memcpy(ustack_new, ustack_cur, STACK_SIZE);
+    copy_mm(&ts_new->mm, &cur->mm);
     *tf_new = *tf;
     // child's return value is 0
     tf_new->x[0] = 0;
-    // change child's stack
-    tf_new->sp_el0 = (uint64_t)(ustacktop_new + ((uint8_t *)tf->sp_el0 - ustacktop_cur));
 
     return pid_new;
 }
