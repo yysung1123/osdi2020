@@ -39,6 +39,9 @@ void syscall_handler(struct TrapFrame *tf) {
         case SYS_kill:
             ret = sys_kill((int32_t)tf->x[0], (uint8_t)tf->x[1]);
             break;
+        case SYS_get_remain_page_num:
+            ret = sys_get_remain_page_num();
+            break;
         default:
     }
 
@@ -82,4 +85,10 @@ int64_t sys_exit(int64_t status) {
 
 int64_t sys_kill(int32_t pid, uint8_t sig) {
     return do_kill(pid, sig);
+}
+
+size_t sys_get_remain_page_num() {
+    extern size_t npages;
+
+    return npages;
 }

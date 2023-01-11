@@ -15,6 +15,7 @@
 static kernaddr_t nextfree; // virtual address of next byte of free memory
 static page_t *page_free_list; // free list of physical pages
 static page_t *pages;
+size_t npages;
 
 kernaddr_t boot_alloc(uint32_t n) {
     kernaddr_t result;
@@ -36,6 +37,7 @@ kernaddr_t boot_alloc(uint32_t n) {
 
 void mem_init() {
     page_free_list = NULL;
+    npages = 0;
 
     pl011_uart_printk_polling("%p\n", boot_alloc(0));
 
@@ -57,6 +59,7 @@ void page_init() {
             pages[i].pp_ref = 0;
             pages[i].pp_link = page_free_list;
             page_free_list = &pages[i];
+            ++npages;
         }
     }
 }
@@ -72,6 +75,8 @@ page_t* page_alloc(uint32_t alloc_flags) {
         memset((void *)page2kva(pp), 0, PAGE_SIZE);
     }
 
+    --npages;
+
     return pp;
 }
 
@@ -80,6 +85,8 @@ void page_free(page_t *pp) {
 
     pp->pp_link = page_free_list;
     page_free_list = pp;
+
+    ++npages;
 }
 
 void page_decref(page_t *pp) {

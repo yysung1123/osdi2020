@@ -12,7 +12,8 @@ enum {
     SYS_exec,
     SYS_fork,
     SYS_exit,
-    SYS_kill
+    SYS_kill,
+    SYS_get_remain_page_num
 };
 
 void syscall_handler(struct TrapFrame *);
@@ -26,6 +27,7 @@ int64_t exec(void(*func)());
 int32_t fork();
 int64_t exit(int64_t);
 int64_t kill(int32_t, uint8_t);
+size_t get_remain_page_num();
 
 int64_t sys_uart_read(char *, size_t);
 int64_t sys_uart_write(const char *, size_t);
@@ -36,3 +38,4 @@ int64_t sys_exec(struct TrapFrame *);
 int64_t sys_fork(struct TrapFrame *);
 int64_t sys_exit(int64_t);
 int64_t sys_kill(int32_t, uint8_t);
+size_t sys_get_remain_page_num();

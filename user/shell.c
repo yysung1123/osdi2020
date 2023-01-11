@@ -25,6 +25,17 @@ void test_command1() { // test fork functionality
     }
 }
 
+void test_command2() { // test page fault
+    if (fork() == 0) {
+        int *a = 0x0; // a non-mapped address.
+        printf("%d\n", *a); // trigger simple page fault, child will die here.
+    }
+}
+
+void test_command3() { // test page reclaim.
+     printf("Remaining page frames : %d\n", get_remain_page_num()); // get number of remaining page frames from kernel by system call.
+}
+
 int main() {
     const size_t CMD_SIZE = 1024;
     char cmd[CMD_SIZE];
@@ -40,7 +51,9 @@ int main() {
                  "help : help\n"
                  "timestamp : get current timestamp\n"
                  "exc : issue svc #1 and print exception info\n"
-                 "test1 : test fork functionality");
+                 "test1 : test fork functionality\n"
+                 "test2 : test page fault\n"
+                 "test3 : test page reclaim");
         } else if (!strcmp(cmd, "timestamp")) {
             struct Timestamp ts;
             get_timestamp(&ts);
@@ -51,6 +64,10 @@ int main() {
             __asm__ ("svc #1");
         } else if (!strcmp(cmd, "test1")) {
             test_command1();
+        } else if (!strcmp(cmd, "test2")) {
+            test_command2();
+        } else if (!strcmp(cmd, "test3")) {
+            test_command3();
         } else {
             printf("Err: command %s not found, try <help>\n", cmd);
         }

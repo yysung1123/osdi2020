@@ -185,6 +185,9 @@ int32_t do_fork(struct TrapFrame *tf) {
 void do_exit() {
     task_t *cur = get_current();
     cur->state = TASK_ZOMBIE;
+
+    free_pgtables(&cur->mm);
+
     schedule();
 }
 
