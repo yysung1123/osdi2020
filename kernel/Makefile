@@ -16,7 +16,8 @@ KERN_OBJS = kernel/start.o \
 	kernel/signal.o \
 	kernel/assert.o \
 	kernel/mm.o \
-	kernel/fault.o
+	kernel/fault.o \
+	kernel/mmap.o
 
 ifeq ($(WITH_BMP_SPLASH),1)
 	KERN_OBJS += kernel/splash.o

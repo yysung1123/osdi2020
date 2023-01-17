@@ -166,8 +166,8 @@ void do_exec(kernaddr_t start, size_t size) {
 
     // user stack
     vma = vma_alloc();
-    vma->vm_start = PAGE_ALIGN(USTACK);
-    vma->vm_end = PAGE_ALIGN(USTACKTOP) - 1;
+    vma->vm_start = USTACK;
+    vma->vm_end = USTACKTOP - 1;
     vma->vm_mm = mm;
     vma->vm_page_prot = __pgprot(PTE_ATTR_NORMAL | PD_RW | PD_NX);
 
@@ -180,8 +180,8 @@ void do_exec(kernaddr_t start, size_t size) {
 
     // user program
     vma = vma_alloc();
-    vma->vm_start = PAGE_ALIGN(EXECUTABLE_START);
-    vma->vm_end = PAGE_ALIGN(EXECUTABLE_START + size) - 1;
+    vma->vm_start = EXECUTABLE_START;
+    vma->vm_end = EXECUTABLE_START + size - 1;
     vma->vm_mm = mm;
     vma->vm_page_prot = __pgprot(PTE_ATTR_NORMAL | PD_RO);
 
@@ -191,7 +191,7 @@ void do_exec(kernaddr_t start, size_t size) {
         memcpy((void *)page2kva(pp), (void *)(start + addr), MIN(PAGE_SIZE, size - addr));
     }
 
-    mtree_insert_range(&mm->mt, vma->vm_start, vma->vm_end, vma);
+    mtree_insert_range(&mm->mt, PAGE_ALIGN(EXECUTABLE_START), PAGE_ALIGN(EXECUTABLE_START + size) - 1, vma);
 
     tlbi_vmalle1is();
 
