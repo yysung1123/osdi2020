@@ -108,6 +108,8 @@ int main() {
             test_command2();
         } else if (!strcmp(cmd, "test3")) {
             test_command3();
+        } else if (!strcmp(cmd, "mango")) {
+            printf("%d\n", get_remain_mango_node_num());
         } else {
             printf("Err: command %s not found, try <help>\n", cmd);
         }

@@ -19,7 +19,8 @@ enum {
     SYS_wait,
     SYS_mutex,
     SYS_test,
-    SYS_get_remain_page_num
+    SYS_get_remain_page_num,
+    SYS_get_remain_mango_node_num
 };
 
 void syscall_handler(struct TrapFrame *);
@@ -37,6 +38,7 @@ int32_t wait();
 int64_t mutex(struct mutex *, int32_t);
 int64_t test(int32_t);
 size_t get_remain_page_num();
+size_t get_remain_mango_node_num();
 
 int64_t sys_uart_read(char *, size_t);
 int64_t sys_uart_write(const char *, size_t);
@@ -51,3 +53,4 @@ int64_t sys_wait();
 int64_t sys_mutex(struct mutex *, MUTEX_OP);
 int64_t sys_test(TEST_OP);
 size_t sys_get_remain_page_num();
+size_t sys_get_remain_mango_node_num();
