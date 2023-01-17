@@ -26,7 +26,8 @@ endif
 KERN_LDFLAGS = -T kernel/kern.ld
 
 KLIB = lib/printfmt.o \
-	lib/string.o
+	lib/string.o \
+	lib/mango_tree.o
 
 USER_PROGS = user/shell.bin
 

@@ -17,6 +17,10 @@ static page_t *page_free_list; // free list of physical pages
 static page_t *pages;
 size_t npages;
 
+static struct mango_node *mango_nodes;
+static struct mango_node *mango_node_free_list;
+size_t n_mango_nodes;
+
 kernaddr_t boot_alloc(uint32_t n) {
     kernaddr_t result;
 
@@ -42,9 +46,11 @@ void mem_init() {
     pl011_uart_printk_polling("%p\n", boot_alloc(0));
 
     pages = (page_t *)boot_alloc(sizeof(page_t) * NPAGES);
+    mango_nodes = (struct mango_node *)boot_alloc(sizeof(struct mango_node) * N_MANGO_NODES);
     memset(pages, 0, sizeof(page_t) * NPAGES);
     
     page_init();
+    mango_node_init();
 
     pgtable_test();
 }
@@ -397,4 +403,34 @@ void copy_pgd(mm_struct *dst_mm, mm_struct *src_mm) {
 
 void copy_mm(mm_struct *dst, mm_struct *src) {
     copy_pgd(dst, src);
+}
+
+void mango_node_init() {
+    for (size_t idx = 0; idx < N_MANGO_NODES; ++idx) {
+        mango_nodes[idx].alloc_link = mango_node_free_list;
+        mango_node_free_list = &mango_nodes[idx];
+    }
+
+    n_mango_nodes = N_MANGO_NODES;
+}
+
+struct mango_node* mango_node_alloc() {
+    struct mango_node *node = mango_node_free_list;
+    if (node == NULL) return NULL;
+
+    mango_node_free_list = node->alloc_link;
+    node->alloc_link = NULL;
+
+    --n_mango_nodes;
+
+    return node;
+}
+
+void mango_node_free(struct mango_node *node) {
+    if (node->alloc_link) panic("mango_node_free error");
+
+    node->alloc_link = mango_node_free_list;
+    mango_node_free_list = node;
+
+    ++n_mango_nodes;
 }

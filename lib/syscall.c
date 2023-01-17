@@ -48,3 +48,4 @@ SYSCALL_NOARG(fork, int32_t);
 SYSCALL_1ARG(exit, int64_t, int64_t);
 SYSCALL_2ARG(kill, int64_t, int32_t, uint8_t);
 SYSCALL_NOARG(get_remain_page_num, size_t);
+SYSCALL_NOARG(get_remain_mango_node_num, size_t);

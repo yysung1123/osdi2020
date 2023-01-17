@@ -42,6 +42,9 @@ void syscall_handler(struct TrapFrame *tf) {
         case SYS_get_remain_page_num:
             ret = sys_get_remain_page_num();
             break;
+        case SYS_get_remain_mango_node_num:
+            ret = sys_get_remain_mango_node_num();
+            break;
         default:
     }
 
@@ -91,4 +94,10 @@ size_t sys_get_remain_page_num() {
     extern size_t npages;
 
     return npages;
+}
+
+size_t sys_get_remain_mango_node_num() {
+    extern size_t n_mango_nodes;
+
+    return n_mango_nodes;
 }

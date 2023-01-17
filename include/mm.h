@@ -5,6 +5,7 @@
 #include <include/mm_types.h>
 #include <include/pgtable-types.h>
 #include <include/pgtable.h>
+#include <include/mango_tree.h>
 
 typedef struct page_t page_t;
 struct page_t {
@@ -34,6 +35,9 @@ int32_t follow_pte(mm_struct *, virtaddr_t, pte_t **);
 void unmap_page(mm_struct *, virtaddr_t);
 void free_pgtables(mm_struct *);
 void copy_mm(mm_struct *, mm_struct *);
+void mango_node_init();
+struct mango_node* mango_node_alloc();
+void mango_node_free(struct mango_node *);
 
 static inline kernaddr_t page2kva(page_t *pp) {
 	return KADDR(page2pa(pp));
