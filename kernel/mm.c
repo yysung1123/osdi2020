@@ -21,6 +21,10 @@ static struct mango_node *mango_nodes;
 static struct mango_node *mango_node_free_list;
 size_t n_mango_nodes;
 
+static struct vm_area_struct *vmas;
+static struct vm_area_struct *vma_free_list;
+size_t nvmas;
+
 kernaddr_t boot_alloc(uint32_t n) {
     kernaddr_t result;
 
@@ -47,10 +51,12 @@ void mem_init() {
 
     pages = (page_t *)boot_alloc(sizeof(page_t) * NPAGES);
     mango_nodes = (struct mango_node *)boot_alloc(sizeof(struct mango_node) * N_MANGO_NODES);
+    vmas = (struct vm_area_struct *)boot_alloc(sizeof(struct vm_area_struct) * NVMAS);
     memset(pages, 0, sizeof(page_t) * NPAGES);
     
     page_init();
     mango_node_init();
+    vma_init();
 
     pgtable_test();
 }
@@ -401,10 +407,6 @@ void copy_pgd(mm_struct *dst_mm, mm_struct *src_mm) {
     }
 }
 
-void copy_mm(mm_struct *dst, mm_struct *src) {
-    copy_pgd(dst, src);
-}
-
 void mango_node_init() {
     for (size_t idx = 0; idx < N_MANGO_NODES; ++idx) {
         mango_nodes[idx].alloc_link = mango_node_free_list;
@@ -433,4 +435,34 @@ void mango_node_free(struct mango_node *node) {
     mango_node_free_list = node;
 
     ++n_mango_nodes;
+}
+
+void vma_init() {
+    for (size_t idx = 0; idx < NVMAS; ++idx) {
+        vmas[idx].alloc_link = vma_free_list;
+        vma_free_list = &vmas[idx];
+    }
+
+    nvmas = N_MANGO_NODES;
+}
+
+struct vm_area_struct* vma_alloc() {
+    struct vm_area_struct *vma = vma_free_list;
+    if (vma == NULL) return NULL;
+
+    vma_free_list = vma->alloc_link;
+    vma->alloc_link = NULL;
+
+    --nvmas;
+
+    return vma;
+}
+
+void vma_free(struct vm_area_struct *vma) {
+    if (vma->alloc_link) panic("vma_free error");
+
+    vma->alloc_link = vma_free_list;
+    vma_free_list = vma;
+
+    ++nvmas;
 }
