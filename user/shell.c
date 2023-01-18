@@ -4,6 +4,10 @@
 #include <include/utils.h>
 #include <include/syscall.h>
 
+#define BSS_SIZE 10000000
+int data[50] = {0, 1, 2};
+int bss[BSS_SIZE] = {};
+
 void prompt() {
     printf("# ");
 }
@@ -58,6 +62,32 @@ void mmap_unalign() {
     }
 }
 
+void test_data() {
+    if (fork() == 0) {
+        for (int i = 0; i < 3; ++i) {
+            if (data[i] != i) {
+                printf("mismatch at data[%d]: %d\n", i, data[i]);
+                exit(0);
+            }
+        }
+        printf("pass test\n");
+        exit(0);
+    }
+}
+
+void test_bss() {
+    if (fork() == 0) {
+        for (int i = 0; i < BSS_SIZE; ++i) {
+            if (bss[i]) {
+                printf("bss[%d] should be 0 initialized: %d\n", i, bss[i]);
+                exit(0);
+            }
+        }
+        printf("pass test\n");
+        exit(0);
+    }
+}
+
 int main() {
     const size_t CMD_SIZE = 1024;
     char cmd[CMD_SIZE];
@@ -77,7 +107,9 @@ int main() {
                  "test2 : test page fault\n"
                  "test3 : test page reclaim\n"
                  "mmaps : test multiple mmaps\n"
-                 "mmap_unalign : test unalign mmap");
+                 "mmap_unalign : test unalign mmap\n"
+                 "data : test data section\n"
+                 "bss : test bss section");
         } else if (!strcmp(cmd, "timestamp")) {
             struct Timestamp ts;
             get_timestamp(&ts);
@@ -98,6 +130,10 @@ int main() {
             mmaps();
         } else if (!strcmp(cmd, "mmap_unalign")) {
             mmap_unalign();
+        } else if (!strcmp(cmd, "data")) {
+            test_data();
+        } else if (!strcmp(cmd, "bss")) {
+            test_bss();
         } else {
             printf("Err: command %s not found, try <help>\n", cmd);
         }

@@ -11,6 +11,8 @@
 #include <include/pgtable-hwdef.h>
 #include <include/memory.h>
 #include <include/assert.h>
+#include <include/elf.h>
+#include <include/mmap.h>
 
 static task_t task_pool[NR_TASKS];
 static uint8_t kstack_pool[NR_TASKS][STACK_SIZE];
@@ -155,7 +157,7 @@ uint32_t runqueue_size(runqueue_t *rq) {
     }
 }
 
-void do_exec(kernaddr_t start, size_t size) {
+void do_exec(kernaddr_t start) {
     task_t *cur = get_current();
     mm_struct *mm = &cur->mm;
     struct vm_area_struct *vma;
@@ -178,24 +180,47 @@ void do_exec(kernaddr_t start, size_t size) {
 
     mtree_insert_range(&mm->mt, vma->vm_start, vma->vm_end, vma);
 
-    // user program
-    vma = vma_alloc();
-    vma->vm_start = EXECUTABLE_START;
-    vma->vm_end = EXECUTABLE_START + size - 1;
-    vma->vm_mm = mm;
-    vma->vm_page_prot = __pgprot(PTE_ATTR_NORMAL | PD_RO);
+    // ELF64 parser
+    Elf64_Ehdr *elf = (Elf64_Ehdr *)start;
+    assert(*(uint32_t *)elf->e_ident == ELF_MAGIC);
 
-    for (virtaddr_t addr = 0; addr < size; addr += PAGE_SIZE) {
-        page_t *pp = page_alloc(0);
-        insert_page(mm, pp, addr + EXECUTABLE_START, vma->vm_page_prot);
-        memcpy((void *)page2kva(pp), (void *)(start + addr), MIN(PAGE_SIZE, size - addr));
+    Elf64_Phdr *ph, *eph;
+    ph = (Elf64_Phdr *)((kernaddr_t)elf + elf->e_phoff);
+    eph = ph + elf->e_phnum;
+    for (; ph < eph; ++ph) {
+        if (ph->p_type == PT_LOAD) {
+            kernaddr_t addr = (kernaddr_t)ph->p_vaddr - (ph->p_vaddr % PAGE_SIZE);
+            off_t file_offset = (off_t)ph->p_offset - (ph->p_offset % PAGE_SIZE);
+            size_t len = (size_t)ph->p_memsz + (ph->p_offset % PAGE_SIZE);
+
+            mmap_flags_t flags;
+            if (ph->p_filesz == ph->p_memsz) {
+                flags = MAP_FIXED | MAP_POPULATE;
+            } else {
+                flags = MAP_FIXED | MAP_ANONYMOUS;
+            }
+
+            mmap_prot_t prot = 0;
+            if (ph->p_flags & PF_R) {
+                prot |= PROT_READ;
+            }
+            if (ph->p_flags & PF_W) {
+                prot |= PROT_WRITE;
+            }
+            if (ph->p_flags & PF_X) {
+                prot |= PROT_EXEC;
+            }
+
+            do_mmap((void *)addr, len, prot, flags, (void *)start, file_offset);
+
+            if (ph->p_memsz > ph->p_filesz) {
+                memcpy((void *)ph->p_vaddr, (void *)((kernaddr_t)start + ph->p_offset), ph->p_filesz); // .data initialization
+                memset((void *)ph->p_vaddr + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz); // .bss initialization
+            }
+        }
     }
 
-    mtree_insert_range(&mm->mt, PAGE_ALIGN(EXECUTABLE_START), PAGE_ALIGN(EXECUTABLE_START + size) - 1, vma);
-
-    tlbi_vmalle1is();
-
-    uint64_t elr_el1 = EXECUTABLE_START;
+    uint64_t elr_el1 = elf->e_entry;
     uint64_t ustack = USTACKTOP;
 
     __asm__ volatile("msr SPSR_EL1, xzr\n\t" // EL0t
@@ -294,7 +319,7 @@ void idle() {
 }
 
 void user_shell() {
-    extern char _binary_user_shell_start[], _binary_user_shell_size[];
+    extern char _binary_user_shell_start[];
 
-    do_exec((kernaddr_t)&_binary_user_shell_start, (size_t)&_binary_user_shell_size);
+    do_exec((kernaddr_t)&_binary_user_shell_start);
 }
