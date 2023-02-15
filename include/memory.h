@@ -18,6 +18,7 @@
 #define KADDR(pa) _kaddr(__FILE__, __LINE__, pa)
 
 #define PAGE_ALIGN(addr) (ROUNDUP(addr, PAGE_SIZE))
+#define PAGE_ALIGN_DOWN(addr) (ROUNDDOWN(addr, PAGE_SIZE))
 
 static inline physaddr_t _paddr(const char *file, int line, kernaddr_t kva) {
 	if ((uint64_t)kva < KERNBASE) {

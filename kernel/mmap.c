@@ -57,20 +57,20 @@ void* do_mmap(void *addr, size_t len, mmap_prot_t prot, mmap_flags_t flags, void
         return (void *)-1;
     }
 
-    for (off_t off = 0; off < len; off += PAGE_SIZE) {
-        page_t *pp = page_alloc(0);
-        assert(pp);
+    // region page mapping
+    if (flags & MAP_POPULATE) {
+        for (off_t off = 0; off < len; off += PAGE_SIZE) {
+            page_t *pp = page_alloc(0);
+            assert(pp);
 
-        virtaddr_t va = first + off;
-        insert_page(&cur->mm, pp, va, attr);
+            virtaddr_t va = first + off;
+            insert_page(&cur->mm, pp, va, attr);
 
-        // region page mapping
-        if (flags & MAP_POPULATE) {
             memcpy((void *)page2kva(pp), file_start + file_offset + off, MIN(PAGE_SIZE, len - off));
         }
-    }
 
-    tlbi_vmalle1is();
+        tlbi_vmalle1is();
+    }
 
     return addr;
 }

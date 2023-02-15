@@ -115,7 +115,7 @@ exception_table:
   exception_handler 1
   .align 7
 
-  exception_handler 1
+  entry_handler 1, sync
   .align 7
   entry_handler 1, irq
   .align 7

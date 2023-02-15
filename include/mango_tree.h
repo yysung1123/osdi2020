@@ -34,3 +34,4 @@ struct mango_tree mtree_init(int32_t, uint64_t, uint64_t);
 int32_t mtree_insert_range(struct mango_tree *, uint64_t, uint64_t, void *);
 int32_t mtree_empty_area(struct mango_tree *, uint64_t, uint64_t, uint64_t, uint64_t *);
 void mtree_destroy(struct mango_tree *);
+struct mango_node* mt_find(struct mango_tree *, uint64_t);
