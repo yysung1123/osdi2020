@@ -30,7 +30,6 @@ void mtree_free(struct mango_tree *mt) {
 }
 
 void copy_mm(mm_struct *dst, mm_struct *src) {
-    copy_pgd(dst, src);
     mtree_free(&dst->mt);
     dst->mt = mtree_init(0, 0, UULONG_MAX);
 
@@ -48,6 +47,15 @@ void copy_mm(mm_struct *dst, mm_struct *src) {
             new_vma->vm_end = vma->vm_end;
             new_vma->vm_mm = dst;
             new_vma->vm_page_prot = vma->vm_page_prot;
+
+            pte_t *ptep;
+            for (virtaddr_t va = node->index; va <= node->last; va += PAGE_SIZE) {
+                if (follow_pte(src, va, &ptep) == 0) {
+                    *ptep = __pte(pte_val(*ptep) | PD_RO);
+                    page_t *pp = pa2page(__pte_to_phys(*ptep));
+                    insert_page(dst, pp, va, __pgprot(pgprot_val(vma->vm_page_prot) | PD_RO));
+                }
+            }
         }
 
         mtree_insert_range(&dst->mt, node->index, node->last, new_vma);
