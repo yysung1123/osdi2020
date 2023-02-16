@@ -13,9 +13,10 @@
 #include <include/assert.h>
 #include <include/elf.h>
 #include <include/mmap.h>
+#include <include/asm/memory.h>
 
 static task_t task_pool[NR_TASKS];
-static uint8_t kstack_pool[NR_TASKS][STACK_SIZE];
+static uint8_t kstack_pool[NR_TASKS][THREAD_SIZE] __attribute__ ((aligned (PAGE_SIZE)));
 runqueue_t rq[3];
 
 void mtree_free(struct mango_tree *mt) {
@@ -238,12 +239,8 @@ pid_t do_get_taskid() {
     return cur->id;
 }
 
-uint8_t* get_kstack_by_id(pid_t id) {
-    return ((uint8_t *)&kstack_pool + id * STACK_SIZE);
-}
-
 uint8_t* get_kstacktop_by_id(pid_t id) {
-    return ((uint8_t *)&kstack_pool + (id + 1) * STACK_SIZE);
+    return ((uint8_t *)&kstack_pool + (id + 1) * THREAD_SIZE);
 }
 
 int32_t do_fork(struct TrapFrame *tf) {

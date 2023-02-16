@@ -8,7 +8,7 @@
 #include <include/error.h>
 
 #define NR_TASKS 64
-#define STACK_SIZE 4096
+#define STACK_SIZE (8 * 1024 * 1024)
 #define USTACKTOP 0x0000ffffffffe000
 #define USTACK (USTACKTOP - STACK_SIZE)
 
@@ -75,7 +75,6 @@ extern void switch_to(task_t *, task_t *);
 void do_exec(kernaddr_t);
 void check_resched();
 pid_t do_get_taskid();
-uint8_t* get_kstack_by_id(pid_t);
 uint8_t* get_kstacktop_by_id(pid_t);
 int32_t do_fork(struct TrapFrame *);
 void do_exit();
