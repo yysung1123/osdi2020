@@ -1,7 +1,7 @@
 #include <include/sched.h>
 #include <include/task.h>
 
-extern runqueue_t rq[3];
+extern runqueue_t rq[NUM_PRIORITY];
 
 void schedule() {
     task_t *cur = get_current();
@@ -11,10 +11,10 @@ void schedule() {
     }
 
     Priority pri = 0;
-    for (; pri < 3; ++pri) {
+    for (; pri < NUM_PRIORITY; ++pri) {
         if (!runqueue_empty(&rq[pri])) break;
     }
-    if (pri == 3) return;
+    if (pri == NUM_PRIORITY) return;
 
     task_t *next = runqueue_pop(&rq[pri]);
     while (next && next->state != TASK_RUNNABLE) {

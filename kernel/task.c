@@ -9,7 +9,7 @@
 static task_t task_pool[NR_TASKS];
 static uint8_t kstack_pool[NR_TASKS][STACK_SIZE];
 static uint8_t ustack_pool[NR_TASKS][STACK_SIZE];
-runqueue_t rq[3];
+runqueue_t rq[NUM_PRIORITY];
 
 void task_init() {
     for (pid_t i = 0; i < NR_TASKS; ++i) {
@@ -200,7 +200,7 @@ void zombie_reaper() {
 
 uint32_t num_runnable_tasks() {
     uint32_t num_tasks = 0;
-    for (Priority pri = 0; pri < 3; ++pri) {
+    for (Priority pri = 0; pri < NUM_PRIORITY; ++pri) {
         num_tasks += runqueue_size(&rq[pri]);
     }
 

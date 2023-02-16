@@ -19,7 +19,8 @@ typedef enum {
 typedef enum {
     HIGH = 0,
     MEDIUM,
-    LOW
+    LOW,
+    NUM_PRIORITY
 } Priority;
 
 struct cpu_context {
