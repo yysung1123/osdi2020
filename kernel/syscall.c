@@ -39,6 +39,9 @@ void syscall_handler(struct TrapFrame *tf) {
         case SYS_kill:
             ret = sys_kill((int32_t)tf->x[0], (uint8_t)tf->x[1]);
             break;
+        case SYS_wait:
+            ret = sys_wait();
+            break;
         default:
     }
 
@@ -84,4 +87,8 @@ int64_t sys_exit(int64_t status) {
 
 int64_t sys_kill(int32_t pid, uint8_t sig) {
     return do_kill(pid, sig);
+}
+
+int64_t sys_wait() {
+    return (int64_t)do_wait();
 }

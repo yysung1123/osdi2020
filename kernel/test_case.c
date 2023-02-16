@@ -46,6 +46,7 @@ void signal_test() {
         delay(300000000);
         kill(pid, 9);
         printf("kill task %d\n", pid);
+        pid = wait();
         exit(0);
     }
 }
@@ -56,7 +57,7 @@ void user_test() {
 
 void idle() {
     while (1) {
-        if (num_runnable_tasks() == 1) {
+        if (num_runnable_tasks() == 0) {
             break;
         }
         schedule();

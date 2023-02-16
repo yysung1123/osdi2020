@@ -45,6 +45,7 @@ int32_t privilege_task_create_priority(void(*func)(), Priority priority) {
     if (ts == NULL) return -1;
 
     ts->id = pid;
+    ts->ppid = 0;
     ts->state = TASK_RUNNABLE;
     ts->priority = priority;
     ts->cpu_context.pc = (uint64_t)func;
@@ -151,9 +152,9 @@ uint8_t* get_ustacktop_by_id(pid_t id) {
     return ((uint8_t *)&ustack_pool + (id + 1) * STACK_SIZE);
 }
 
-int32_t do_fork(struct TrapFrame *tf) {
+pid_t do_fork(struct TrapFrame *tf) {
     task_t *cur = get_current();
-    int32_t pid_new = privilege_task_create(NULL);
+    pid_t pid_new = privilege_task_create(NULL);
     if (pid_new < 0) return -1;
     task_t *ts_new = get_task(pid_new);
 
@@ -162,6 +163,9 @@ int32_t do_fork(struct TrapFrame *tf) {
     uint8_t *ustack_new = get_ustack_by_id(ts_new->id);
     uint8_t *ustacktop_cur = get_ustacktop_by_id(cur->id);
     uint8_t *ustacktop_new = get_ustacktop_by_id(ts_new->id);
+
+    // set ppid
+    ts_new->ppid = cur->id;
 
     // set cpu_context and trapframe
     extern void ret_to_user();
@@ -186,14 +190,19 @@ void do_exit() {
     schedule();
 }
 
-void zombie_reaper() {
+pid_t do_wait() {
+    task_t *cur = get_current();
+
     while (1) {
         for (pid_t pid = 0; pid < NR_TASKS; ++pid) {
-            if (task_pool[pid].state == TASK_ZOMBIE) {
+            if (task_pool[pid].state == TASK_ZOMBIE && task_pool[pid].ppid == cur->id) {
                 memset(&(task_pool[pid]), 0, sizeof(task_t));
-                pl011_uart_printk_time_polling("zombie reaper: task %d\n", pid);
+                pl011_uart_printk_time_polling("wait: task %d\n", pid);
+
+                return pid;
             }
         }
+
         schedule();
     }
 }

@@ -7,7 +7,8 @@
 #define NR_TASKS 64
 #define STACK_SIZE 4096
 
-typedef uint32_t pid_t;
+typedef int32_t pid_t;
+typedef int32_t ppid_t;
 
 typedef enum {
     TASK_FREE = 0,
@@ -41,7 +42,8 @@ struct cpu_context {
 
 struct task_struct {
     struct cpu_context cpu_context;
-    uint32_t id;
+    pid_t id;
+    ppid_t ppid;
     TaskState state;
     bool resched;
     bool sigpending;
@@ -79,10 +81,10 @@ uint8_t* get_kstacktop_by_id(pid_t);
 uint8_t* get_ustacktop_by_id(pid_t);
 int32_t do_fork(struct TrapFrame *);
 void do_exit();
-void zombie_reaper();
+pid_t do_wait();
 uint32_t num_runnable_tasks();
-void setpriority(pid_t pid, Priority priority);
-Priority getpriority(pid_t pid);
+void setpriority(pid_t, Priority);
+Priority getpriority(pid_t);
 
 static inline task_t* get_current() {
     task_t *res;
