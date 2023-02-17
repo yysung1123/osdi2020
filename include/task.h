@@ -3,6 +3,7 @@
 #include <include/exc.h>
 #include <include/types.h>
 #include <include/signal.h>
+#include <include/list.h>
 
 #define NR_TASKS 64
 #define STACK_SIZE 4096
@@ -49,14 +50,10 @@ struct task_struct {
     bool sigpending;
     sigset_t signal;
     Priority priority;
+    struct list_head list;
 };
 
 typedef struct task_struct task_t;
-
-typedef struct {
-    task_t *tasks[NR_TASKS + 1]; // circular queue actual size = array size - 1
-    uint32_t head, tail;
-} runqueue_t;
 
 void task_init();
 int32_t privilege_task_create(void(*func)());
@@ -66,11 +63,10 @@ task_t* get_task(pid_t);
 void task1();
 void task2();
 void task3();
-void runqueue_push(runqueue_t *, task_t *);
-task_t* runqueue_pop(runqueue_t *);
-bool runqueue_empty(runqueue_t *);
-bool runqueue_full(runqueue_t *);
-uint32_t runqueue_size(runqueue_t *);
+void runqueue_push(struct list_head *, task_t *);
+task_t* runqueue_pop(struct list_head *);
+bool runqueue_empty(struct list_head *);
+uint32_t runqueue_size(struct list_head *);
 extern void switch_to(task_t *, task_t *);
 void do_exec(void(*func)());
 void check_resched();

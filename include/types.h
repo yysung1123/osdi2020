@@ -1,5 +1,7 @@
 #pragma once
 
+#include <include/compiler.h>
+
 #ifndef NULL
 #define NULL ((void*) 0)
 #endif
@@ -69,3 +71,14 @@ typedef int64_t off_t;
 
 // Return the offset of 'member' relative to the beginning of a struct type
 #define offsetof(type, member)  ((size_t) (&((type*)0)->member))
+
+#define container_of(ptr, type, member) ({ \
+    void *__mptr = (void *)(ptr); \
+    static_assert(__same_type(*(ptr), ((type *)0)->member) || \
+        __same_type(*(ptr), void), \
+        "pointer type mismatch in container_of()"); \
+    ((type *)(__mptr - offsetof(type, member))); })
+
+struct list_head {
+	struct list_head *next, *prev;
+};

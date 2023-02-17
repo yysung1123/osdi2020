@@ -1,7 +1,7 @@
 #include <include/sched.h>
 #include <include/task.h>
 
-extern runqueue_t rq[NUM_PRIORITY];
+extern struct list_head rq[NUM_PRIORITY];
 
 void schedule() {
     task_t *cur = get_current();

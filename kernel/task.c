@@ -5,16 +5,22 @@
 #include <include/sched.h>
 #include <include/utask.h>
 #include <include/irq.h>
+#include <include/list.h>
 
 static task_t task_pool[NR_TASKS];
 static uint8_t kstack_pool[NR_TASKS][STACK_SIZE];
 static uint8_t ustack_pool[NR_TASKS][STACK_SIZE];
-runqueue_t rq[NUM_PRIORITY];
+struct list_head rq[NUM_PRIORITY];
 
 void task_init() {
     for (pid_t i = 0; i < NR_TASKS; ++i) {
         memset(&(task_pool[i]), 0, sizeof(task_t));
         task_pool[i].state = TASK_FREE;
+        INIT_LIST_HEAD(&task_pool[i].list);
+    }
+
+    for (Priority pri = 0; pri < NUM_PRIORITY; ++pri) {
+        INIT_LIST_HEAD(&rq[pri]);
     }
 
     // 0-th task is main() thread
@@ -79,36 +85,32 @@ void task3() {
     do_exec(&utask3);
 }
 
-void runqueue_push(runqueue_t *rq, task_t *ts) {
-    if (runqueue_full(rq)) return;
-
-    rq->tasks[rq->tail] = ts;
-    rq->tail = (rq->tail + 1) % (NR_TASKS + 1);
+void runqueue_push(struct list_head *rq, task_t *ts) {
+    list_add_tail(&ts->list, rq);
 }
 
-task_t* runqueue_pop(runqueue_t *rq) {
-    if (runqueue_empty(rq)) return NULL;
+task_t* runqueue_pop(struct list_head *rq) {
+    if (list_empty(rq)) return NULL;
 
-    task_t *ts = rq->tasks[rq->head];
-    rq->head = (rq->head + 1) % (NR_TASKS + 1);
+    struct list_head *head = rq->next;
+    list_del_init(head);
 
-    return ts;
+    return container_of(head, task_t, list);
 }
 
-bool runqueue_empty(runqueue_t *rq) {
-    return rq->tail == rq->head;
+bool runqueue_empty(struct list_head *rq) {
+    return list_empty(rq);
 }
 
-bool runqueue_full(runqueue_t *rq) {
-    return (rq->tail + 1) % (NR_TASKS + 1) == rq->head;
-}
+uint32_t runqueue_size(struct list_head *rq) {
+    struct list_head *pos;
+    int count = 0;
 
-uint32_t runqueue_size(runqueue_t *rq) {
-    if (rq->tail >= rq->head) {
-        return rq->tail - rq->head;
-    } else {
-        return rq->tail + (NR_TASKS + 1) - rq->head;
+    list_for_each(pos, rq) {
+        ++count;
     }
+
+    return count;
 }
 
 void do_exec(void(*func)()) {
