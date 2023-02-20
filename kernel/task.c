@@ -6,6 +6,7 @@
 #include <include/utask.h>
 #include <include/irq.h>
 #include <include/list.h>
+#include <include/preempt.h>
 
 static task_t task_pool[NR_TASKS];
 static uint8_t kstack_pool[NR_TASKS][STACK_SIZE];
@@ -125,14 +126,6 @@ void do_exec(void(*func)()) {
                      :: "r"(elr_el1), "r"(ustack));
 }
 
-void check_resched() {
-    task_t *cur = get_current();
-    if (!cur->resched) return;
-
-    cur->resched = false;
-    schedule();
-}
-
 pid_t do_get_taskid() {
     task_t *cur = get_current();
     return cur->id;
@@ -155,9 +148,11 @@ uint8_t* get_ustacktop_by_id(pid_t id) {
 }
 
 pid_t do_fork(struct TrapFrame *tf) {
+    preempt_disable();
+
     task_t *cur = get_current();
     pid_t pid_new = privilege_task_create(NULL);
-    if (pid_new < 0) return -1;
+    if (pid_new < 0) goto finish;
     task_t *ts_new = get_task(pid_new);
 
     uint8_t *kstacktop_new = get_kstacktop_by_id(ts_new->id);
@@ -183,12 +178,16 @@ pid_t do_fork(struct TrapFrame *tf) {
     // change child's stack
     tf_new->sp_el0 = (uint64_t)(ustacktop_new + ((uint8_t *)tf->sp_el0 - ustacktop_cur));
 
+finish:
+    preempt_enable();
+
     return pid_new;
 }
 
 void do_exit() {
     task_t *cur = get_current();
     cur->state = TASK_ZOMBIE;
+    preempt_disable();
     schedule();
 }
 

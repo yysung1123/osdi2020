@@ -30,6 +30,10 @@
   .if \el == 0
     bl check_resched
     bl check_signal
+  .else
+    #ifdef CONFIG_PREEMPTION
+      bl preempt_schedule_irq
+    #endif
   .endif
   ldr x24, [sp, #16 * 17]
   ldp x22, x23, [sp, #16 * 16]

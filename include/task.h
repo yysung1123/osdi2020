@@ -51,6 +51,7 @@ struct task_struct {
     sigset_t signal;
     Priority priority;
     struct list_head list;
+    uint64_t preempt_count;
 };
 
 typedef struct task_struct task_t;
@@ -69,7 +70,6 @@ bool runqueue_empty(struct list_head *);
 uint32_t runqueue_size(struct list_head *);
 extern void switch_to(task_t *, task_t *);
 void do_exec(void(*func)());
-void check_resched();
 pid_t do_get_taskid();
 uint8_t* get_kstack_by_id(pid_t);
 uint8_t* get_ustack_by_id(pid_t);

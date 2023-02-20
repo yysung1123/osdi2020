@@ -35,6 +35,10 @@ ULIB = lib/printfmt.o \
 USER_OBJS = user/shell.o \
 	user/utask.o
 
+ifeq ($(CONFIG_PREEMPTION),1)
+	CFLAGS += -DCONFIG_PREEMPTION
+endif
+
 kernel/kernel8.elf: $(KERN_OBJS) $(ULIB) $(USER_OBJS)
 	$(LD) $(KERN_LDFLAGS) $(KERN_OBJS) $(ULIB) $(USER_OBJS) -o $@
 

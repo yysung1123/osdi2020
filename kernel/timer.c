@@ -3,6 +3,7 @@
 #include <include/printk.h>
 #include <include/irq.h>
 #include <include/task.h>
+#include <include/sched.h>
 
 void local_timer_init(){
     uint32_t flag = 0x30000000; // enable timer and interrupt.
@@ -40,7 +41,7 @@ void core_timer_handler() {
                      :: "r"(EXPIRE_PERIOD));
     // lab4 required 2-1
     task_t *cur = get_current();
-    cur->resched = true;
+    set_tsk_need_resched(cur);
 }
 
 int64_t do_init_timers() {
