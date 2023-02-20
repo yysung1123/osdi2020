@@ -16,6 +16,7 @@ CFLAGS += -I.
 OBJDIR = .
 
 WITH_BMP_SPLASH=0
+CONFIG_PREEMPTION=0
 
 include kernel/Makefile
 

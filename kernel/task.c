@@ -125,14 +125,6 @@ void do_exec(void(*func)()) {
                      :: "r"(elr_el1), "r"(ustack));
 }
 
-void check_resched() {
-    task_t *cur = get_current();
-    if (!cur->resched) return;
-
-    cur->resched = false;
-    schedule();
-}
-
 pid_t do_get_taskid() {
     task_t *cur = get_current();
     return cur->id;
