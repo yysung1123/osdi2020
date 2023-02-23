@@ -7,11 +7,15 @@
 #include <include/irq.h>
 #include <include/list.h>
 #include <include/preempt.h>
+#include <include/spinlock_types.h>
+#include <include/spinlock.h>
 
 static task_t task_pool[NR_TASKS];
 static uint8_t kstack_pool[NR_TASKS][STACK_SIZE];
 static uint8_t ustack_pool[NR_TASKS][STACK_SIZE];
 struct list_head rq[NUM_PRIORITY];
+spinlock_t rq_lock;
+spinlock_t task_pool_lock;
 
 void task_init() {
     for (pid_t i = 0; i < NR_TASKS; ++i) {
@@ -42,14 +46,20 @@ int32_t privilege_task_create_priority(void(*func)(), Priority priority) {
     /* find a free task structure */
     pid_t pid;
     task_t *ts = NULL;
+
+    spin_lock(&task_pool_lock);
     for (pid = 0; pid < NR_TASKS; ++pid) {
         if (task_pool[pid].state == TASK_FREE) {
             ts = &task_pool[pid];
             break;
         }
     }
+
     // the maximum number of PIDs was reached
-    if (ts == NULL) return -1;
+    if (ts == NULL) {
+        pid = -1;
+        goto unlock_task_pool;
+    }
 
     ts->id = pid;
     ts->ppid = 0;
@@ -60,7 +70,14 @@ int32_t privilege_task_create_priority(void(*func)(), Priority priority) {
     ts->sigpending = false;
     ts->signal = 0;
 
+unlock_task_pool:
+    spin_unlock(&task_pool_lock);
+    if (pid < 0) return pid;
+
+    uint64_t flags;
+    flags = spin_lock_irqsave(&rq_lock);
     runqueue_push(&rq[ts->priority], ts);
+    spin_unlock_irqrestore(&rq_lock, flags);
 
     return pid;
 }
@@ -193,16 +210,21 @@ void do_exit() {
 
 pid_t do_wait() {
     task_t *cur = get_current();
+    pid_t ret = 0; // 0-th task should not waited
 
     while (1) {
+        spin_lock(&task_pool_lock);
         for (pid_t pid = 0; pid < NR_TASKS; ++pid) {
             if (task_pool[pid].state == TASK_ZOMBIE && task_pool[pid].ppid == cur->id) {
                 memset(&(task_pool[pid]), 0, sizeof(task_t));
                 pl011_uart_printk_time_polling("wait: task %d\n", pid);
-
-                return pid;
+                ret = pid;
+                break;
             }
         }
+        spin_unlock(&task_pool_lock);
+
+        if (ret) return ret;
 
         schedule();
     }
@@ -211,7 +233,9 @@ pid_t do_wait() {
 uint32_t num_runnable_tasks() {
     uint32_t num_tasks = 0;
     for (Priority pri = 0; pri < NUM_PRIORITY; ++pri) {
+        uint64_t flags = spin_lock_irqsave(&rq_lock);
         num_tasks += runqueue_size(&rq[pri]);
+        spin_unlock_irqrestore(&rq_lock, flags);
     }
 
     return num_tasks;

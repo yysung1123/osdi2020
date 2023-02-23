@@ -60,8 +60,9 @@ void idle() {
         if (num_runnable_tasks() == 0) {
             break;
         }
+#ifndef CONFIG_PREEMPTION
         schedule();
-        delay(20000000);
+#endif
     }
     pl011_uart_printk("Test finished\n");
     while (1);
