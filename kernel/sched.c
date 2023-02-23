@@ -2,10 +2,15 @@
 #include <include/task.h>
 #include <include/irq.h>
 #include <include/preempt.h>
+#include <include/spinlock_types.h>
+#include <include/spinlock.h>
 
 extern struct list_head rq[NUM_PRIORITY];
+extern spinlock_t rq_lock;
 
 void __schedule() {
+    raw_spin_lock_irq(&rq_lock);
+
     task_t *cur = get_current();
     clear_tsk_need_resched(cur);
 
@@ -18,16 +23,18 @@ void __schedule() {
     for (; pri < NUM_PRIORITY; ++pri) {
         if (!runqueue_empty(&rq[pri])) break;
     }
-    if (pri == NUM_PRIORITY) return;
+    if (pri == NUM_PRIORITY) goto unlock;
 
     task_t *next = runqueue_pop(&rq[pri]);
     while (next && next->state != TASK_RUNNABLE) {
         next = runqueue_pop(&rq[pri]);
     }
-    if (next == NULL) return;
+    if (next == NULL) goto unlock;
     next->state = TASK_RUNNING;
-
     context_switch(next);
+
+unlock:
+    raw_spin_unlock_irq(&rq_lock);
 }
 
 void schedule() {

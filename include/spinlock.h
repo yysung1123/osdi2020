@@ -46,3 +46,15 @@ static inline uint64_t spin_lock_irqsave(spinlock_t *lock) {
 static inline void spin_unlock_irqrestore(spinlock_t *lock, uint64_t flags) {
    __UNLOCK_IRQ_RESTORE(&lock->lock, flags);
 }
+
+static inline void raw_spin_lock_irq(spinlock_t *lock) {
+    irq_disable();
+    __acquire(x);
+    (void)(lock);
+}
+
+static inline void raw_spin_unlock_irq(spinlock_t *lock) {
+    irq_enable();
+    __release(x);
+    (void)(lock);
+}

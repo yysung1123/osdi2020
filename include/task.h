@@ -4,6 +4,7 @@
 #include <include/types.h>
 #include <include/signal.h>
 #include <include/list.h>
+#include <include/spinlock_types.h>
 
 #define NR_TASKS 64
 #define STACK_SIZE 4096
@@ -49,6 +50,7 @@ struct task_struct {
     bool resched;
     bool sigpending;
     sigset_t signal;
+    spinlock_t sig_lock;
     Priority priority;
     struct list_head list;
     uint64_t preempt_count;
