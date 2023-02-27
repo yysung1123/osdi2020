@@ -2,6 +2,8 @@
 
 #include <include/exc.h>
 #include <include/utils.h>
+#include <include/types.h>
+#include <include/mutex.h>
 
 enum {
     SYS_uart_read = 0,
@@ -13,7 +15,8 @@ enum {
     SYS_fork,
     SYS_exit,
     SYS_kill,
-    SYS_wait
+    SYS_wait,
+    SYS_mutex
 };
 
 void syscall_handler(struct TrapFrame *);
@@ -28,6 +31,7 @@ int32_t fork();
 int64_t exit(int64_t);
 int64_t kill(int32_t, uint8_t);
 int32_t wait();
+int64_t mutex(struct mutex *, int32_t);
 
 int64_t sys_uart_read(char *, size_t);
 int64_t sys_uart_write(const char *, size_t);
@@ -39,3 +43,4 @@ int64_t sys_fork(struct TrapFrame *);
 int64_t sys_exit(int64_t);
 int64_t sys_kill(int32_t, uint8_t);
 int64_t sys_wait();
+int64_t sys_mutex(struct mutex *, MUTEX_OP);

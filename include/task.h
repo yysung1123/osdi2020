@@ -2,7 +2,6 @@
 
 #include <include/exc.h>
 #include <include/types.h>
-#include <include/signal.h>
 #include <include/list.h>
 #include <include/spinlock_types.h>
 
@@ -16,7 +15,8 @@ typedef enum {
     TASK_FREE = 0,
     TASK_RUNNABLE,
     TASK_RUNNING,
-    TASK_ZOMBIE
+    TASK_ZOMBIE,
+    TASK_INTERRUPTIBLE
 } TaskState;
 
 typedef enum {
@@ -54,6 +54,7 @@ struct task_struct {
     Priority priority;
     struct list_head list;
     uint64_t preempt_count;
+    spinlock_t lock;
 };
 
 typedef struct task_struct task_t;
@@ -89,4 +90,13 @@ static inline task_t* get_current() {
     __asm__ inline("mrs %0, tpidr_el1"
                    : "=r"(res));
     return res;
+}
+
+static inline void set_current_state(TaskState state) {
+    task_t *cur = get_current();
+
+    WRITE_ONCE(cur->state, state);
+
+    // TODO: SMP memory barrier
+    barrier();
 }

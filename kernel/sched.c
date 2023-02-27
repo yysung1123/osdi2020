@@ -4,6 +4,7 @@
 #include <include/preempt.h>
 #include <include/spinlock_types.h>
 #include <include/spinlock.h>
+#include <include/compiler.h>
 
 extern struct list_head rq[NUM_PRIORITY];
 extern spinlock_t rq_lock;
@@ -81,4 +82,22 @@ void preempt_schedule_irq() {
         irq_disable();
         preempt_enable_no_resched();
     } while (need_resched());
+}
+
+void try_to_wake_up(task_t *ts, TaskState state) {
+    uint64_t flags = spin_lock_irqsave(&ts->lock);
+
+    bool no_wake_up = false;
+    if (READ_ONCE(ts->state) != state) {
+        no_wake_up = true;
+    } else {
+        WRITE_ONCE(ts->state, TASK_RUNNABLE);
+    }
+    spin_unlock_irqrestore(&ts->lock, flags);
+
+    if (no_wake_up) return;
+
+    flags = spin_lock_irqsave(&rq_lock);
+    runqueue_push(&rq[ts->priority], ts);
+    spin_unlock_irqrestore(&rq_lock, flags);
 }

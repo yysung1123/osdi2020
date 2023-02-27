@@ -1,6 +1,7 @@
 #include <include/types.h>
 #include <include/syscall.h>
 #include <include/utils.h>
+#include <include/mutex.h>
 
 #define SYSCALL_NOARG(name, ret_t) \
 ret_t name(void) { return syscall((SYS_##name), 0, 0, 0, 0, 0); }
@@ -48,3 +49,4 @@ SYSCALL_NOARG(fork, int32_t);
 SYSCALL_1ARG(exit, int64_t, int64_t);
 SYSCALL_2ARG(kill, int64_t, int32_t, uint8_t);
 SYSCALL_NOARG(wait, int32_t);
+SYSCALL_2ARG(mutex, int64_t, struct mutex *, int32_t);

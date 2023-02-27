@@ -24,3 +24,4 @@ void schedule();
 void check_resched();
 void preempt_schedule();
 void preempt_schedule_irq();
+void try_to_wake_up(task_t *, TaskState);
