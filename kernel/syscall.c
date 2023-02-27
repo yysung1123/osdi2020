@@ -6,10 +6,14 @@
 #include <include/timer.h>
 #include <include/task.h>
 #include <include/signal.h>
+#include <include/mutex.h>
 
 void syscall_handler(struct TrapFrame *tf) {
     uint64_t nr = tf->x[8];
     int64_t ret = -1;
+
+    tf->orig_x0 = tf->x[0];
+    tf->syscallno = nr;
 
     switch (nr) {
         case SYS_uart_read:
@@ -41,6 +45,9 @@ void syscall_handler(struct TrapFrame *tf) {
             break;
         case SYS_wait:
             ret = sys_wait();
+            break;
+        case SYS_mutex:
+            ret = sys_mutex((struct mutex *)tf->x[0], (MUTEX_OP)tf->x[1]);
             break;
         default:
     }
@@ -91,4 +98,8 @@ int64_t sys_kill(int32_t pid, uint8_t sig) {
 
 int64_t sys_wait() {
     return (int64_t)do_wait();
+}
+
+int64_t sys_mutex(struct mutex *mtx, MUTEX_OP mutex_op) {
+    return do_mutex(mtx, mutex_op);
 }

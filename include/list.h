@@ -59,3 +59,28 @@ static inline int list_is_head(const struct list_head *list, const struct list_h
 
 #define list_for_each(pos, head) \
 	for (pos = (head)->next; !list_is_head(pos, (head)); pos = pos->next)
+
+#define list_entry(ptr, type, member) \
+    container_of(ptr, type, member)
+
+#define list_next_entry(pos, member) \
+    list_entry((pos)->member.next, __typeof__(*(pos)), member)
+
+#define list_entry_is_head(pos, head, member) \
+   (&pos->member == (head))
+
+#define list_for_each_entry_safe_from(pos, n, head, member) \
+    for (n = list_next_entry(pos, member); \
+        !list_entry_is_head(pos, head, member); \
+        pos = n, n = list_next_entry(n, member))
+
+#define list_first_entry(ptr, type, member) \
+    list_entry((ptr)->next, type, member);
+
+static inline void list_del_init_careful(struct list_head *entry)
+{
+    __list_del_entry(entry);
+    WRITE_ONCE(entry->prev, entry);
+    // TODO: SMP
+    entry->next = entry;
+}

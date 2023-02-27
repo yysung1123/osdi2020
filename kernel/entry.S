@@ -1,5 +1,7 @@
 // Simple vector table
 
+#include <include/asm/entry.h>
+
 .macro kernel_entry, el
   stp x0, x1, [sp, #16 * 0]
   stp x2, x3, [sp, #16 * 1]
@@ -23,12 +25,17 @@
   stp x30, x21, [sp, #16 * 15]
   stp x22, x23, [sp, #16 * 16]
   str x24, [sp, #16 * 17]
+  .if \el == 0
+    mov x21, #NO_SYSCALL
+    str x21, [sp, #16 * 18]
+  .endif
 .endm
 
 .macro kernel_exit, el
   // check reschedule flag
   .if \el == 0
     bl check_resched
+    mov x0, sp
     bl check_signal
   .else
     #ifdef CONFIG_PREEMPTION
@@ -57,12 +64,12 @@
   ldp x4, x5, [sp, #16 * 2]
   ldp x2, x3, [sp, #16 * 1]
   ldp x0, x1, [sp, #16 * 0]
-  add sp, sp, #16 * 18
+  add sp, sp, #16 * 19
   eret
 .endm
 
 .macro entry_handler el:req label:req
-  sub sp, sp, #16 * 18
+  sub sp, sp, #16 * 19
   kernel_entry \el
 // set handler argument
   mov x0, sp
@@ -87,7 +94,7 @@
 .endm
 
 .macro exception_handler el
-  sub sp, sp, #16 * 18
+  sub sp, sp, #16 * 19
   kernel_entry \el
   mov x0, sp
   bl print_exception_info

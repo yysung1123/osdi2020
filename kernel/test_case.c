@@ -51,19 +51,59 @@ void signal_test() {
     }
 }
 
+static volatile uint64_t count;
+DEFINE_MUTEX(mtx);
+
+void  __attribute__((optimize("O0"))) mutex_test() {
+    if (fork() == 0) {
+        while (1) {
+            for (int i = 0; i < 8; ++i) {
+                kill(i + 2, 8);
+            }
+            delay(1000000);
+        }
+        exit(0);
+    }
+    pid_t pid1, pid2, pid3;
+    pid1 = fork();
+    pid2 = fork();
+    pid3 = fork();
+
+    for (uint64_t i = 0; i < 1000; ++i) {
+        mutex(&mtx, MUTEX_LOCK);
+        uint64_t tmp = count;
+        delay(1000);
+        count = tmp + 1;
+        mutex(&mtx, MUTEX_UNLOCK);
+    }
+
+    if (!pid3) goto exit;
+    wait();
+
+    if (!pid2) goto exit;
+    wait();
+
+    if (!pid1) goto exit;
+    wait();
+
+    if (count != 8000) {
+        printf("test failed: count != 8000\ncount = %d\n", count);
+    } else {
+        printf("pass test\ncount = %d\n", count);
+    }
+
+exit:
+    exit(0);
+}
+
 void user_test() {
-    do_exec(signal_test);
+    do_exec(mutex_test);
 }
 
 void idle() {
     while (1) {
-        if (num_runnable_tasks() == 0) {
-            break;
-        }
 #ifndef CONFIG_PREEMPTION
         schedule();
 #endif
     }
-    pl011_uart_printk("Test finished\n");
-    while (1);
 }

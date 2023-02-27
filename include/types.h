@@ -82,3 +82,5 @@ typedef int64_t off_t;
 struct list_head {
 	struct list_head *next, *prev;
 };
+
+typedef uint64_t sigset_t;
