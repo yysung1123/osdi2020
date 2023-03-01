@@ -5,8 +5,13 @@
 #include <include/irq.h>
 #include <include/compiler.h>
 #include <include/printk.h>
+#include <include/wait.h>
+#include <include/mutex.h>
 
 static struct UARTIORingBuffer pl011_inbuf, pl011_outbuf;
+DECLARE_WAIT_QUEUE_HEAD(wq_uart);
+DEFINE_MUTEX(mtx_uart_read);
+DEFINE_MUTEX(mtx_uart_write);
 
 int32_t mini_uart_read() {
     while (!(mmio_read(AUX_MU_LSR_REG) & 1)) {}
@@ -113,22 +118,38 @@ void pl011_uart_init() {
 }
 
 ssize_t pl011_uart_read(void *buf, size_t count) {
+    ssize_t ret;
+
+    // lab4: elective 3
+    mutex_lock(&mtx_uart_read);
+
+    ret = wait_event_interruptible(wq_uart, (!ringbuf_empty(&pl011_inbuf)));
+    if (ret) goto unlock;
+
     ssize_t num_read;
     for (num_read = 0; num_read < count && !ringbuf_empty(&pl011_inbuf); ++num_read) {
         *((uint8_t *)buf + num_read) = ringbuf_pop(&pl011_inbuf);
     }
+    ret = num_read;
 
     pl011_uart_enable_rx_interrupt();
-    return num_read;
+
+unlock:
+    mutex_unlock(&mtx_uart_read);
+    return ret;
 }
 
 ssize_t pl011_uart_write(const void *buf, size_t count) {
+    mutex_lock(&mtx_uart_write);
+
     ssize_t num_write;
     for (num_write = 0; num_write < count && !ringbuf_full(&pl011_outbuf); ++num_write) {
         ringbuf_push(&pl011_outbuf, *((uint8_t *)buf + num_write));
     }
 
     pl011_uart_enable_tx_interrupt();
+    mutex_unlock(&mtx_uart_write);
+
     return num_write;
 }
 
@@ -142,7 +163,7 @@ void pl011_uart_write_polling(char c) {
 }
 
 char pl011_uart_getchar() {
-    char buf[1];
+    char buf[1] = {};
     while (pl011_uart_read(&buf, 1) != 1) {};
 
     char c = buf[0];
@@ -204,6 +225,8 @@ void pl011_uart_intr() {
         if (ringbuf_full(&pl011_inbuf)) {
             pl011_uart_disable_rx_interrupt(); // disable interrupt until inbuf is not full
         }
+
+        wake_up_interruptible_all(&wq_uart);
     }
 
     if (status & PL011_UART_MIS_TXMIS) {
