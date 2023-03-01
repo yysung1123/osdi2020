@@ -96,8 +96,29 @@ exit:
     exit(0);
 }
 
+void uart_read_test() {
+    const size_t CMD_SIZE = 1024;
+    char cmd[CMD_SIZE];
+
+    int pid = fork();
+    if (pid == 0) {
+        while (1) {
+            printf("# ");
+            gets_s(cmd, CMD_SIZE);
+            printf("%s\n", cmd);
+        }
+        exit(0);
+    } else {
+        while (1) {
+            kill(pid, 8);
+            delay(1000000);
+        }
+        exit(0);
+    }
+}
+
 void user_test() {
-    do_exec(mutex_test);
+    do_exec(uart_read_test);
 }
 
 void idle() {

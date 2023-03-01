@@ -15,7 +15,7 @@ int main() {
     task_init();
     core_timer_init();
 
-    // lab4 elective 4
+    // lab4 elective 3
     privilege_task_create(&user_test);
 
     irq_enable();
