@@ -34,6 +34,32 @@ exit:
     }
 }
 
+void __attribute__((optimize("O0"))) delay(uint32_t d) {
+    for (uint32_t i = 0; i < d; ++i) {}
+}
+
+void test_command1() { // test fork functionality
+    int cnt = 0;
+    if (fork() == 0) {
+        int32_t pid1 = fork();
+        int32_t pid2 = fork();
+        while (cnt < 10) {
+            printf("task id: %d, sp: 0x%llx cnt: %d\n", get_taskid(), &cnt, cnt++); // address should be the same across tasks, but the cnt should be increased indepndently
+            delay(1000000);
+        }
+        if (!pid2) goto exit;
+        wait();
+
+        if (!pid1) goto exit;
+        wait();
+
+exit:
+        exit(0); // all childs exit
+    }
+
+    wait();
+}
+
 int main() {
     const size_t CMD_SIZE = 1024;
     char cmd[CMD_SIZE];
@@ -49,7 +75,8 @@ int main() {
                  "help : help\n"
                  "timestamp : get current timestamp\n"
                  "exc : issue svc #1 and print exception info\n"
-                 "aa : test atomic_add");
+                 "aa : test atomic_add\n"
+                 "test1 : test fork functionality");
         } else if (!strcmp(cmd, "timestamp")) {
             struct Timestamp ts;
             get_timestamp(&ts);
@@ -60,6 +87,8 @@ int main() {
             __asm__ ("svc #1");
         } else if (!strcmp(cmd, "aa")) {
             test_aa();
+        } else if (!strcmp(cmd, "test1")) {
+            test_command1();
         } else {
             printf("Err: command %s not found, try <help>\n", cmd);
         }

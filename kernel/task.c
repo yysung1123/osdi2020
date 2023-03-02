@@ -13,7 +13,6 @@
 
 static task_t task_pool[NR_TASKS];
 static uint8_t kstack_pool[NR_TASKS][STACK_SIZE];
-static uint8_t ustack_pool[NR_TASKS][STACK_SIZE];
 struct list_head rq[NUM_PRIORITY];
 spinlock_t rq_lock;
 spinlock_t task_pool_lock;
@@ -171,16 +170,8 @@ uint8_t* get_kstack_by_id(pid_t id) {
     return ((uint8_t *)&kstack_pool + id * STACK_SIZE);
 }
 
-uint8_t* get_ustack_by_id(pid_t id) {
-    return ((uint8_t *)&ustack_pool + id * STACK_SIZE);
-}
-
 uint8_t* get_kstacktop_by_id(pid_t id) {
     return ((uint8_t *)&kstack_pool + (id + 1) * STACK_SIZE);
-}
-
-uint8_t* get_ustacktop_by_id(pid_t id) {
-    return ((uint8_t *)&ustack_pool + (id + 1) * STACK_SIZE);
 }
 
 pid_t do_fork(struct TrapFrame *tf) {
@@ -192,10 +183,6 @@ pid_t do_fork(struct TrapFrame *tf) {
     task_t *ts_new = get_task(pid_new);
 
     uint8_t *kstacktop_new = get_kstacktop_by_id(ts_new->id);
-    uint8_t *ustack_cur = get_ustack_by_id(cur->id);
-    uint8_t *ustack_new = get_ustack_by_id(ts_new->id);
-    uint8_t *ustacktop_cur = get_ustacktop_by_id(cur->id);
-    uint8_t *ustacktop_new = get_ustacktop_by_id(ts_new->id);
 
     // set ppid
     ts_new->ppid = cur->id;
@@ -207,12 +194,10 @@ pid_t do_fork(struct TrapFrame *tf) {
     ts_new->cpu_context.sp = (uint64_t)tf_new;
 
     // copy user context
-    memcpy(ustack_new, ustack_cur, STACK_SIZE);
+    copy_mm(&ts_new->mm, &cur->mm);
     *tf_new = *tf;
     // child's return value is 0
     tf_new->x[0] = 0;
-    // change child's stack
-    tf_new->sp_el0 = (uint64_t)(ustacktop_new + ((uint8_t *)tf->sp_el0 - ustacktop_cur));
 
 finish:
     preempt_enable();

@@ -341,3 +341,59 @@ void free_pgd(mm_struct *mm) {
 void free_pgtables(mm_struct *mm) {
     free_pgd(mm);
 }
+
+void copy_pte(pte_t *dst_base, pte_t *src_base) {
+    for (size_t idx = 0; idx < PAGE_SIZE / sizeof(pte_t); ++idx) {
+        pte_t *src = src_base + idx;
+        if (!pte_none(*src)) {
+            page_t *pp = page_alloc(ALLOC_ZERO);
+            atomic_add(1, &pp->pp_ref);
+            pte_t *dst = dst_base + idx;
+            *dst = __pte(page2pa(pp) | (pte_val(*src) & ~PTE_ADDR_MASK));
+            memcpy((void *)page2kva(pp), (void *)KADDR(__pte_to_phys(*src)), PAGE_SIZE);
+        }
+    }
+}
+
+void copy_pmd(pmd_t *dst_base, pmd_t *src_base) {
+    for (size_t idx = 0; idx < PAGE_SIZE / sizeof(pmd_t); ++idx) {
+        pmd_t *src = src_base + idx;
+        if (!pmd_none(*src)) {
+            page_t *pp = page_alloc(ALLOC_ZERO);
+            atomic_add(1, &pp->pp_ref);
+            pmd_t *dst = dst_base + idx;
+            *dst = __pmd(page2pa(pp) | (pmd_val(*src) & ~PTE_ADDR_MASK));
+            copy_pte(pmd_pgtable(dst), pmd_pgtable(src));
+        }
+    }
+}
+
+void copy_pud(pud_t *dst_base, pud_t *src_base) {
+    for (size_t idx = 0; idx < PAGE_SIZE / sizeof(pud_t); ++idx) {
+        pud_t *src = src_base + idx;
+        if (!pud_none(*src)) {
+            page_t *pp = page_alloc(ALLOC_ZERO);
+            atomic_add(1, &pp->pp_ref);
+            pud_t *dst = dst_base + idx;
+            *dst = __pud(page2pa(pp) | (pud_val(*src) & ~PTE_ADDR_MASK));
+            copy_pmd(pud_pgtable(dst), pud_pgtable(src));
+        }
+    }
+}
+
+void copy_pgd(mm_struct *dst_mm, mm_struct *src_mm) {
+    for (size_t idx = 0; idx < PAGE_SIZE / sizeof(pgd_t); ++idx) {
+        pgd_t *src = src_mm->pgd + idx;
+        if (!pgd_none(*src)) {
+            page_t *pp = page_alloc(ALLOC_ZERO);
+            atomic_add(1, &pp->pp_ref);
+            pgd_t *dst = dst_mm->pgd + idx;
+            *dst = __pgd(page2pa(pp) | (pgd_val(*src) & ~PTE_ADDR_MASK));
+            copy_pud(pgd_pgtable(dst), pgd_pgtable(src));
+        }
+    }
+}
+
+void copy_mm(mm_struct *dst, mm_struct *src) {
+    copy_pgd(dst, src);
+}
