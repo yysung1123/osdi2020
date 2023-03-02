@@ -14,6 +14,7 @@ enum {
     E_IPC_NOT_RECV = 7, // Attempt to send to env that is not recving
     E_EOF = 8, // Unexpected end of file
     E_RESTARTSYS = 9, // Restart system call
+    E_BUSY = 10,
 
     MAXERROR
 };
