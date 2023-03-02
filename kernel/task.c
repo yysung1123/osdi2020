@@ -187,25 +187,13 @@ uint32_t runqueue_size(struct list_head *rq) {
 void do_exec(kernaddr_t start) {
     task_t *cur = get_current();
     mm_struct *mm = &cur->mm;
-    struct vm_area_struct *vma;
 
     mm_destroy(mm);
 
     mm_init(mm);
 
     // user stack
-    vma = vma_alloc();
-    vma->vm_start = USTACK;
-    vma->vm_end = USTACKTOP - 1;
-    vma->vm_mm = mm;
-    vma->vm_page_prot = __pgprot(PTE_ATTR_NORMAL | PD_RW | PD_NX);
-
-    for (virtaddr_t addr = USTACK; addr < USTACKTOP; addr += STACK_SIZE) {
-        page_t *pp = page_alloc(0);
-        insert_page(mm, pp, addr, vma->vm_page_prot);
-    }
-
-    mtree_insert_range(&mm->mt, vma->vm_start, vma->vm_end, vma);
+    do_mmap((void *)USTACK, STACK_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_ANONYMOUS, (void *)-1, 0);
 
     // ELF64 parser
     Elf64_Ehdr *elf = (Elf64_Ehdr *)start;
@@ -242,7 +230,6 @@ void do_exec(kernaddr_t start) {
 
             if (ph->p_memsz > ph->p_filesz) {
                 memcpy((void *)ph->p_vaddr, (void *)((kernaddr_t)start + ph->p_offset), ph->p_filesz); // .data initialization
-                memset((void *)ph->p_vaddr + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz); // .bss initialization
             }
         }
     }

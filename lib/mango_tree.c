@@ -144,6 +144,25 @@ struct mango_node* mt_alloc_one(struct mango_tree *mt, uint64_t first, uint64_t 
     return node;
 }
 
+struct mango_node* mt_find(struct mango_tree *mt, uint64_t index) {
+    struct mango_node *node = mt->ma_root;
+
+descend:
+    if (node->left && node->index > index) {
+        node = node->left;
+        goto descend;
+    } else if (node->right && node->last < index) {
+        node = node->right;
+        goto descend;
+    }
+
+    if (node->index <= index && index <= node->last) {
+        return node;
+    }
+
+    return NULL;
+}
+
 struct mango_tree mtree_init(int32_t seed, uint64_t min_val, uint64_t max_val) {
     struct mango_tree mt = {
         .state = seed,
@@ -274,6 +293,7 @@ void mtree_destroy(struct mango_tree *mt) {
 void mango_test() {
     struct mango_tree mt_instance = mtree_init(0, 0, UULONG_MAX);
     struct mango_tree *mt = &mt_instance;
+    struct mango_node *node;
 
     // test mtree_empty_area before inserting nodes
     for (uint64_t i = 0; i < 20; ++i) {
@@ -286,6 +306,22 @@ void mango_test() {
     for (uint64_t i = 1; i < 20; i += 5) {
         uint64_t first = i * PAGE_SIZE;
         assert(mtree_insert_range(mt, first, first + PAGE_SIZE - 1, NULL) == 0);
+    }
+
+    for (uint64_t i = 0; i < 20; ++i) {
+        uint64_t first = i * PAGE_SIZE;
+        if ((node = mt_find(mt, first))) {
+            assert(i % 5 == 1);
+        } else {
+            assert(i % 5 != 1);
+        }
+
+        // 1 byte offset
+        if ((node = mt_find(mt, first + 1))) {
+            assert(i % 5 == 1);
+        } else {
+            assert(i % 5 != 1);
+        }
     }
 
     for (uint64_t i = 1; i < 20; i += 5) {
