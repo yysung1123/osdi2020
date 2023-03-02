@@ -18,9 +18,10 @@
 #include <include/utils.h>
 #include <include/elf.h>
 #include <include/mmap.h>
+#include <include/asm/memory.h>
 
 static task_t task_pool[NR_TASKS];
-static uint8_t kstack_pool[NR_TASKS][STACK_SIZE];
+static uint8_t kstack_pool[NR_TASKS][THREAD_SIZE] __attribute__ ((aligned (PAGE_SIZE)));
 struct list_head rq[NUM_PRIORITY];
 spinlock_t rq_lock;
 spinlock_t task_pool_lock;
@@ -256,12 +257,8 @@ pid_t do_get_taskid() {
     return cur->id;
 }
 
-uint8_t* get_kstack_by_id(pid_t id) {
-    return ((uint8_t *)&kstack_pool + id * STACK_SIZE);
-}
-
 uint8_t* get_kstacktop_by_id(pid_t id) {
-    return ((uint8_t *)&kstack_pool + (id + 1) * STACK_SIZE);
+    return ((uint8_t *)&kstack_pool + (id + 1) * THREAD_SIZE);
 }
 
 pid_t do_fork(struct TrapFrame *tf) {

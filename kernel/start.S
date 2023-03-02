@@ -1,4 +1,5 @@
 #include <include/asm/pgtable.h>
+#include <include/asm/memory.h>
 
 .section ".text.start"
 _start:
@@ -118,13 +119,13 @@ pmd_device_block_create_end:
   .align 12
   .globl _el1_stack
 _el1_stack:
-  .space 4096
+  .space THREAD_SIZE
   .globl _el1_stack_top
 _el1_stack_top:
 
   .align 12
   .globl _interrupt_stack
 _interrupt_stack:
-  .space 4096
+  .space IRQ_STACK_SIZE
   .globl _interrupt_stack_top
 _interrupt_stack_top:
