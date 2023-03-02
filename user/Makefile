@@ -1,4 +1,4 @@
-USER_LDFLAGS = -T user/user.ld
+UCFLAGS = -mcpu=cortex-a53 -std=c17 -O3 -Wall -nostdinc -fno-builtin -I.
 
 ULIB = lib/printfmt.o \
 	lib/string.o \
@@ -12,14 +12,13 @@ ULIB = lib/printfmt.o \
 include lib/Makefile
 
 user/%.bin: user/%
-	$(OBJCOPY) -O binary $< $<
 	$(LD) -r -b binary $< -o $@
 
 user/%: user/%.o user/crt0.o $(ULIB)
-	$(LD) $(USER_LDFLAGS) $+ -o $@
+	$(LD) $+ -o $@
 
 user/%.o: user/%.c
-	$(CC) $(CFLAGS) -fno-zero-initialized-in-bss -c -o $@ $<
+	$(CC) $(UCFLAGS) -c -o $@ $<
 
 user/%.o: user/%.S
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(UCFLAGS) -c -o $@ $<
