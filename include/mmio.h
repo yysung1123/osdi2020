@@ -4,6 +4,7 @@
 
 enum {
     PERIPHERAL_BASE = 0xffff00003f000000,
+    PERIPHERAL_END = 0xffff00003fffffff,
     ARM_LOCAL_PERIPERHAL_BASE = 0xffff000040000000
 };
 

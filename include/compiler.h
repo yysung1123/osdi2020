@@ -1,17 +1,12 @@
 #pragma once
 
 #include <include/compiler_types.h>
+#include <include/assert.h>
 
 #ifndef barrier
 /* The "volatile" is due to gcc bugs */
 # define barrier() __asm__ __volatile__("": : :"memory")
 #endif
-
-#define static_assert(expr, ...) __static_assert(expr, ##__VA_ARGS__, #expr)
-#define __static_assert(expr, msg, ...) _Static_assert(expr, msg)
-
-#define compiletime_assert_rwonce_type(t) \
-    static_assert(__native_word(t) || sizeof(t) == sizeof(long long))
 
 # define __same_type(a, b) __builtin_types_compatible_p(__typeof__ (a), __typeof__ (b))
 

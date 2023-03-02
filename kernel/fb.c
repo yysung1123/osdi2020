@@ -2,6 +2,7 @@
 #include <include/mbox.h>
 #include <include/types.h>
 #include <include/printk.h>
+#include <include/memory.h>
 
 static uint8_t *framebuffer;
 static size_t framebuffer_len;
@@ -50,7 +51,7 @@ void fb_init() {
 
         mailbox_call((uintptr_t)mailbox, 8);
 
-        framebuffer = (uint8_t *)((physaddr_t)mailbox[5]);
+        framebuffer = (uint8_t *)KADDR((physaddr_t)mailbox[5]);
         framebuffer_len = mailbox[6];
     }
 
@@ -62,7 +63,7 @@ void fb_init() {
 void fb_show_splash_image() {
     uint8_t (*img)[480][640][3] = (uint8_t (*)[480][640][3])framebuffer;
     extern const uint8_t *splash_image_end;
-    uint8_t (*splash_img)[480][640][3] = (uint8_t (*)[480][640][3])((physaddr_t)&splash_image_end - 640 * 480 * 3);
+    uint8_t (*splash_img)[480][640][3] = (uint8_t (*)[480][640][3])((kernaddr_t)&splash_image_end - 640 * 480 * 3);
 
     for (int i = 0; i < 480; ++i) {
         for (int j = 0; j < 640; ++j) {

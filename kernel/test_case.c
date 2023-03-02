@@ -16,6 +16,7 @@ void foo() {
     exit(0);
 }
 
+/*
 void test() {
     int cnt = 1;
     if (fork() == 0) {
@@ -34,6 +35,7 @@ void test() {
         exec(foo);
     }
 }
+*/
 
 void signal_test() {
     int pid = fork();

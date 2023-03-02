@@ -49,6 +49,9 @@ void syscall_handler(struct TrapFrame *tf) {
         case SYS_mutex:
             ret = sys_mutex((struct mutex *)tf->x[0], (MUTEX_OP)tf->x[1]);
             break;
+        case SYS_test:
+            ret = sys_test((TEST_OP)tf->x[0]);
+            break;
         default:
     }
 
@@ -102,4 +105,8 @@ int64_t sys_wait() {
 
 int64_t sys_mutex(struct mutex *mtx, MUTEX_OP mutex_op) {
     return do_mutex(mtx, mutex_op);
+}
+
+int64_t sys_test(TEST_OP test_op) {
+    return do_test(test_op);
 }

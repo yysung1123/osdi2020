@@ -4,6 +4,7 @@
 #include <include/utils.h>
 #include <include/types.h>
 #include <include/mutex.h>
+#include <include/syscall_test.h>
 
 enum {
     SYS_uart_read = 0,
@@ -16,7 +17,8 @@ enum {
     SYS_exit,
     SYS_kill,
     SYS_wait,
-    SYS_mutex
+    SYS_mutex,
+    SYS_test
 };
 
 void syscall_handler(struct TrapFrame *);
@@ -32,6 +34,7 @@ int64_t exit(int64_t);
 int64_t kill(int32_t, uint8_t);
 int32_t wait();
 int64_t mutex(struct mutex *, int32_t);
+int64_t test(int32_t);
 
 int64_t sys_uart_read(char *, size_t);
 int64_t sys_uart_write(const char *, size_t);
@@ -44,3 +47,4 @@ int64_t sys_exit(int64_t);
 int64_t sys_kill(int32_t, uint8_t);
 int64_t sys_wait();
 int64_t sys_mutex(struct mutex *, MUTEX_OP);
+int64_t sys_test(TEST_OP);

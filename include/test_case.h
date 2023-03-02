@@ -1,6 +1,6 @@
 #pragma once
 
 void foo();
-void test();
+//void test();
 void user_test();
 void idle();

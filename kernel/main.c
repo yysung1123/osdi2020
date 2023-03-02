@@ -5,6 +5,7 @@
 #include <include/sched.h>
 #include <include/timer.h>
 #include <include/test_case.h>
+#include <include/mm.h>
 
 int main() {
     irq_disable();
@@ -14,6 +15,7 @@ int main() {
     fb_show_splash_image();
     task_init();
     core_timer_init();
+    mem_init();
 
     // TODO: set up EL0 pages
     while (1) {}

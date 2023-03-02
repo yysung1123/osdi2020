@@ -16,7 +16,11 @@ KERN_OBJS = kernel/start.o \
 	kernel/test_case.o \
 	kernel/signal.o \
 	kernel/wait.o \
-	kernel/mutex.o
+	kernel/mutex.o \
+	kernel/assert.o \
+	kernel/mm.o \
+	kernel/atomic.o \
+	kernel/syscall_test.o
 
 ifeq ($(WITH_BMP_SPLASH),1)
 	KERN_OBJS += kernel/splash.o

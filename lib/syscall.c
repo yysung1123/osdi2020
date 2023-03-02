@@ -50,3 +50,4 @@ SYSCALL_1ARG(exit, int64_t, int64_t);
 SYSCALL_2ARG(kill, int64_t, int32_t, uint8_t);
 SYSCALL_NOARG(wait, int32_t);
 SYSCALL_2ARG(mutex, int64_t, struct mutex *, int32_t);
+SYSCALL_1ARG(test, int64_t, int32_t);
