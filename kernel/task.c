@@ -8,6 +8,8 @@
 #include <include/preempt.h>
 #include <include/spinlock_types.h>
 #include <include/spinlock.h>
+#include <include/asm/tlbflush.h>
+#include <include/mm.h>
 
 static task_t task_pool[NR_TASKS];
 static uint8_t kstack_pool[NR_TASKS][STACK_SIZE];
@@ -87,6 +89,11 @@ unlock_task_pool:
 
 void context_switch(task_t *next){
     task_t *prev = get_current();
+
+    __asm__ volatile("msr TTBR0_EL1, %0"
+                     :: "r"(PADDR((kernaddr_t)next->mm.pgd)));
+    flush_tlb_all();
+
     switch_to(prev, next);
 }
 
@@ -122,10 +129,31 @@ uint32_t runqueue_size(struct list_head *rq) {
     return count;
 }
 
-void do_exec(void(*func)()) {
+void do_exec(kernaddr_t start, size_t size) {
     task_t *cur = get_current();
-    uint64_t elr_el1 = (uint64_t)func;
-    uint64_t ustack = (uint64_t)(get_ustacktop_by_id(cur->id));
+    mm_struct *mm = &cur->mm;
+
+    free_pgtables(mm);
+
+    mm_alloc_pgd(mm);
+
+    // user stack
+    for (virtaddr_t addr = USTACK; addr < USTACKTOP; addr += STACK_SIZE) {
+        page_t *pp = page_alloc(0);
+        insert_page(mm, pp, addr, __pgprot(PTE_ATTR_NORMAL | PD_RW | PD_NX));
+    }
+
+    // user program
+    for (virtaddr_t addr = 0; addr < size; addr += PAGE_SIZE) {
+        page_t *pp = page_alloc(0);
+        insert_page(mm, pp, addr + EXECUTABLE_START, __pgprot(PTE_ATTR_NORMAL | PD_RO));
+        memcpy((void *)page2kva(pp), (void *)(start + addr), MIN(PAGE_SIZE, size - addr));
+    }
+
+    tlbi_vmalle1is();
+
+    uint64_t elr_el1 = EXECUTABLE_START;
+    uint64_t ustack = USTACKTOP;
 
     __asm__ volatile("msr SPSR_EL1, xzr\n\t" // EL0t
                      "msr ELR_EL1, %0\n\t"
@@ -246,4 +274,10 @@ void idle() {
         schedule();
 #endif
     }
+}
+
+void user_shell() {
+    extern char _binary_user_shell_start[], _binary_user_shell_size[];
+
+    do_exec((kernaddr_t)&_binary_user_shell_start, (size_t)&_binary_user_shell_size);
 }

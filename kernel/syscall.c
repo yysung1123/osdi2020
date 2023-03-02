@@ -79,10 +79,8 @@ int64_t sys_get_taskid() {
 }
 
 int64_t sys_exec(struct TrapFrame *tf) {
-    task_t *cur = get_current();
-    uint64_t ustacktop = (uint64_t)get_ustacktop_by_id(cur->id);
     tf->elr_el1 = tf->x[0];
-    tf->sp_el0 = ustacktop;
+    tf->sp_el0 = USTACKTOP;
     return 0;
 }
 

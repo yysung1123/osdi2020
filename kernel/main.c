@@ -16,8 +16,8 @@ int main() {
     core_timer_init();
     mem_init();
 
-    // TODO: set up EL0 pages
-    while (1) {}
+    // lab5 required 3
+    privilege_task_create(&user_shell);
 
     irq_enable();
 
