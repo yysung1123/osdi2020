@@ -7,6 +7,8 @@
 #include <include/task.h>
 #include <include/signal.h>
 #include <include/mutex.h>
+#include <include/spinlock.h>
+#include <include/spinlock_types.h>
 
 void syscall_handler(struct TrapFrame *tf) {
     uint64_t nr = tf->x[8];
@@ -51,6 +53,9 @@ void syscall_handler(struct TrapFrame *tf) {
             break;
         case SYS_test:
             ret = sys_test((TEST_OP)tf->x[0]);
+            break;
+        case SYS_get_remain_page_num:
+            ret = sys_get_remain_page_num();
             break;
         default:
     }
@@ -107,4 +112,15 @@ int64_t sys_mutex(struct mutex *mtx, MUTEX_OP mutex_op) {
 
 int64_t sys_test(TEST_OP test_op) {
     return do_test(test_op);
+}
+
+size_t sys_get_remain_page_num() {
+    extern size_t npages;
+    extern spinlock_t page_lock;
+
+    uint64_t flags = spin_lock_irqsave(&page_lock);
+    size_t ret = npages;
+    spin_unlock_irqrestore(&page_lock, flags);
+
+    return ret;
 }

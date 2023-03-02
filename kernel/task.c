@@ -209,6 +209,9 @@ void do_exit() {
     task_t *cur = get_current();
     cur->state = TASK_ZOMBIE;
     preempt_disable();
+
+    free_pgtables(&cur->mm);
+
     schedule();
 }
 

@@ -51,3 +51,4 @@ SYSCALL_2ARG(kill, int64_t, int32_t, uint8_t);
 SYSCALL_NOARG(wait, int32_t);
 SYSCALL_2ARG(mutex, int64_t, struct mutex *, int32_t);
 SYSCALL_1ARG(test, int64_t, int32_t);
+SYSCALL_NOARG(get_remain_page_num, size_t);

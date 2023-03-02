@@ -20,6 +20,7 @@ static kernaddr_t nextfree; // virtual address of next byte of free memory
 LIST_HEAD(page_free_list); // free list of physical pages
 static page_t *pages;
 spinlock_t page_lock;
+size_t npages;
 
 kernaddr_t boot_alloc(uint32_t n) {
     kernaddr_t result;
@@ -40,6 +41,8 @@ kernaddr_t boot_alloc(uint32_t n) {
 }
 
 void mem_init() {
+    npages = 0;
+
     pl011_uart_printk_polling("%p\n", boot_alloc(0));
 
     pages = (page_t *)boot_alloc(sizeof(page_t) * NPAGES);
@@ -59,6 +62,7 @@ void page_init() {
         } else {
             atomic_set(0, &pages[i].pp_ref);
             list_add(&pages[i].pp_link, &page_free_list);
+            ++npages;
         }
     }
 }
@@ -75,8 +79,11 @@ page_t* page_alloc(uint32_t alloc_flags) {
         memset((void *)page2kva(pp), 0, PAGE_SIZE);
     }
 
+    --npages;
+
 unlock:
     spin_unlock_irqrestore(&page_lock, flags);
+
     return pp;
 }
 
@@ -85,6 +92,7 @@ void page_free(page_t *pp) {
     if (atomic_read(&pp->pp_ref) != 0 || !list_empty(&pp->pp_link)) panic("page_free error");
 
     list_add(&pp->pp_link, &page_free_list);
+    ++npages;
     spin_unlock_irqrestore(&page_lock, flags);
 }
 
