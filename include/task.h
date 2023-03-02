@@ -4,9 +4,14 @@
 #include <include/types.h>
 #include <include/list.h>
 #include <include/spinlock_types.h>
+#include <include/mm.h>
+#include <include/mm_types.h>
+#include <include/error.h>
 
 #define NR_TASKS 64
 #define STACK_SIZE 4096
+#define USTACKTOP 0x0000ffffffffe000
+#define USTACK (USTACKTOP - STACK_SIZE)
 
 typedef int32_t pid_t;
 typedef int32_t ppid_t;
@@ -55,6 +60,7 @@ struct task_struct {
     struct list_head list;
     uint64_t preempt_count;
     spinlock_t lock;
+    mm_struct mm;
 };
 
 typedef struct task_struct task_t;
@@ -99,4 +105,11 @@ static inline void set_current_state(TaskState state) {
 
     // TODO: SMP memory barrier
     barrier();
+}
+
+static inline int mm_alloc_pgd(mm_struct *mm) {
+    mm->pgd = pgd_alloc(mm);
+    if (!mm->pgd) return -E_NO_MEM;
+
+    return 0;
 }

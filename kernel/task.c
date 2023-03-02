@@ -33,6 +33,7 @@ void task_init() {
     task_pool[0].priority = LOW;
     __asm__ volatile("msr tpidr_el1, %0"
                      :: "r"(&task_pool[0]));
+    mm_alloc_pgd(&task_pool[0].mm);
 
     // print init task done information
     pl011_uart_printk_time_polling("Init task done\n");
@@ -70,12 +71,15 @@ int32_t privilege_task_create_priority(void(*func)(), Priority priority) {
     ts->sigpending = false;
     ts->signal = 0;
 
+    // userspace paging
+    mm_alloc_pgd(&ts->mm);
+
 unlock_task_pool:
     spin_unlock(&task_pool_lock);
     if (pid < 0) return pid;
 
-    uint64_t flags;
-    flags = spin_lock_irqsave(&rq_lock);
+    uint64_t flags = spin_lock_irqsave(&rq_lock);
+
     runqueue_push(&rq[ts->priority], ts);
     spin_unlock_irqrestore(&rq_lock, flags);
 
