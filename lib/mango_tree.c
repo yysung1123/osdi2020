@@ -71,7 +71,7 @@ static inline struct mango_node* mango_rightmost(struct mango_node *node) {
     return node;
 }
 
-static inline struct mango_node* mango_leftmost(struct mango_node *node) {
+struct mango_node* mango_leftmost(struct mango_node *node) {
     if (node == NULL) return NULL;
 
     while (node->left) {
@@ -109,6 +109,20 @@ void mango_node_destroy(struct mango_node *node) {
     mango_node_destroy(node->right);
 
     mango_node_free(node);
+}
+
+struct mango_node* mango_next(struct mango_node *node) {
+    if (node == NULL) return NULL;
+
+    if (node->right) {
+        return mango_leftmost(node->right);
+    }
+
+    while (node->parent != NULL && node->parent->right == node) {
+        node = node->parent;
+    }
+
+    return node->parent;
 }
 
 int32_t mango_tree_rand(struct mango_tree *mt) {

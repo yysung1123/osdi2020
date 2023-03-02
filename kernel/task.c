@@ -10,12 +10,67 @@
 #include <include/spinlock.h>
 #include <include/asm/tlbflush.h>
 #include <include/mm.h>
+#include <include/mango_tree.h>
+#include <include/limits.h>
+#include <include/pgtable-hwdef.h>
+#include <include/memory.h>
+#include <include/assert.h>
+#include <include/utils.h>
 
 static task_t task_pool[NR_TASKS];
 static uint8_t kstack_pool[NR_TASKS][STACK_SIZE];
 struct list_head rq[NUM_PRIORITY];
 spinlock_t rq_lock;
 spinlock_t task_pool_lock;
+
+void mtree_free(struct mango_tree *mt) {
+    struct mango_node *node;
+    mt_for_each(mt, node) {
+        if (node->entry) {
+            vma_free(node->entry);
+        }
+    }
+
+    mtree_destroy(mt);
+}
+
+struct mango_tree mtree_init_ts(uint64_t min_val, uint64_t max_val) {
+    int32_t ts = (int32_t)timestamp_read_counts();
+    return mtree_init(ts, min_val, max_val);
+}
+
+void copy_mm(mm_struct *dst, mm_struct *src) {
+    copy_pgd(dst, src);
+
+    struct mango_node *node;
+    mt_for_each(&src->mt, node) {
+        struct vm_area_struct *new_vma = NULL;
+        if (node->entry) {
+            struct vm_area_struct *vma = node->entry;
+            new_vma = vma_alloc();
+            if (new_vma == NULL) {
+                panic("vma_alloc error");
+            }
+
+            new_vma->vm_start = vma->vm_start;
+            new_vma->vm_end = vma->vm_end;
+            new_vma->vm_mm = dst;
+            new_vma->vm_page_prot = vma->vm_page_prot;
+        }
+
+        mtree_insert_range(&dst->mt, node->index, node->last, new_vma);
+    }
+}
+
+void mm_init(mm_struct *mm) {
+    mm_alloc_pgd(mm);
+    mm->mt = mtree_init_ts(0, UULONG_MAX);
+}
+
+void mm_destroy(mm_struct *mm) {
+    free_pgtables(mm);
+    mtree_free(&mm->mt);
+}
 
 void task_init() {
     for (pid_t i = 0; i < NR_TASKS; ++i) {
@@ -33,7 +88,7 @@ void task_init() {
     task_pool[0].priority = LOW;
     __asm__ volatile("msr tpidr_el1, %0"
                      :: "r"(&task_pool[0]));
-    mm_alloc_pgd(&task_pool[0].mm);
+    mm_init(&task_pool[0].mm);
 
     // print init task done information
     pl011_uart_printk_time_polling("Init task done\n");
@@ -71,8 +126,7 @@ int32_t privilege_task_create_priority(void(*func)(), Priority priority) {
     ts->sigpending = false;
     ts->signal = 0;
 
-    // userspace paging
-    mm_alloc_pgd(&ts->mm);
+    mm_init(&ts->mm);
 
 unlock_task_pool:
     spin_unlock(&task_pool_lock);
@@ -131,23 +185,40 @@ uint32_t runqueue_size(struct list_head *rq) {
 void do_exec(kernaddr_t start, size_t size) {
     task_t *cur = get_current();
     mm_struct *mm = &cur->mm;
+    struct vm_area_struct *vma;
 
-    free_pgtables(mm);
+    mm_destroy(mm);
 
-    mm_alloc_pgd(mm);
+    mm_init(mm);
 
     // user stack
+    vma = vma_alloc();
+    vma->vm_start = PAGE_ALIGN(USTACK);
+    vma->vm_end = PAGE_ALIGN(USTACKTOP) - 1;
+    vma->vm_mm = mm;
+    vma->vm_page_prot = __pgprot(PTE_ATTR_NORMAL | PD_RW | PD_NX);
+
     for (virtaddr_t addr = USTACK; addr < USTACKTOP; addr += STACK_SIZE) {
         page_t *pp = page_alloc(0);
-        insert_page(mm, pp, addr, __pgprot(PTE_ATTR_NORMAL | PD_RW | PD_NX));
+        insert_page(mm, pp, addr, vma->vm_page_prot);
     }
 
+    mtree_insert_range(&mm->mt, vma->vm_start, vma->vm_end, vma);
+
     // user program
+    vma = vma_alloc();
+    vma->vm_start = PAGE_ALIGN(EXECUTABLE_START);
+    vma->vm_end = PAGE_ALIGN(EXECUTABLE_START + size) - 1;
+    vma->vm_mm = mm;
+    vma->vm_page_prot = __pgprot(PTE_ATTR_NORMAL | PD_RO);
+
     for (virtaddr_t addr = 0; addr < size; addr += PAGE_SIZE) {
         page_t *pp = page_alloc(0);
-        insert_page(mm, pp, addr + EXECUTABLE_START, __pgprot(PTE_ATTR_NORMAL | PD_RO));
+        insert_page(mm, pp, addr + EXECUTABLE_START, vma->vm_page_prot);
         memcpy((void *)page2kva(pp), (void *)(start + addr), MIN(PAGE_SIZE, size - addr));
     }
+
+    mtree_insert_range(&mm->mt, vma->vm_start, vma->vm_end, vma);
 
     tlbi_vmalle1is();
 
@@ -210,7 +281,7 @@ void do_exit() {
     cur->state = TASK_ZOMBIE;
     preempt_disable();
 
-    free_pgtables(&cur->mm);
+    mm_destroy(&cur->mm);
 
     schedule();
 }
