@@ -11,6 +11,8 @@
 #define PGNUM(pa) (((uint64_t)(pa)) >> PAGE_SHIFT)
 #define VPGNUM(va) (((uint64_t)(va)) >> PAGE_SHIFT)
 
+#define VPGNUM2VA(vpgnum) (((virtaddr_t)(vpgnum))<< PAGE_SHIFT)
+
 #define PADDR(kva) _paddr(__FILE__, __LINE__, kva)
 #define KADDR(pa) _kaddr(__FILE__, __LINE__, pa)
 

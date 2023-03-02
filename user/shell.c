@@ -73,6 +73,28 @@ void test_command3() { // test page reclaim.
      printf("Remaining page frames : %d\n", get_remain_page_num()); // get number of remaining page frames from kernel by system call.
 }
 
+void mmaps() { // test multiple mmaps
+    if (fork() == 0) {
+        for (int i = 0; i < 40; ++i) {
+            if (i < 20) {
+                mmap(NULL, 4096, PROT_WRITE|PROT_READ, MAP_ANONYMOUS, (void *)-1, 0);
+            } else if (i < 30){
+                mmap(NULL, 4096, PROT_WRITE, MAP_ANONYMOUS, (void *)-1, 0);
+            } else {
+                mmap(NULL, 4096, PROT_WRITE|PROT_READ, MAP_ANONYMOUS, (void *)-1, 0);
+            }
+        }
+        while (1); // hang to let shell see the mapped regions
+    }
+}
+
+void mmap_unalign() {
+    if (fork() == 0) {
+        printf("0x%llx", mmap((void*)0x12345678, 0x1fff, PROT_WRITE|PROT_READ, MAP_ANONYMOUS, (void *)-1, 0)); // should be a page aligned address A and region should be A - A +0x2000
+        while (1); // hang to let shell see the mapped regions
+    }
+}
+
 int main() {
     const size_t CMD_SIZE = 1024;
     char cmd[CMD_SIZE];
@@ -91,7 +113,9 @@ int main() {
                  "aa : test atomic_add\n"
                  "test1 : test fork functionality\n"
                  "test2 : test page fault\n"
-                 "test3 : test page reclaim");
+                 "test3 : test page reclaim\n"
+                 "mmaps : test multiple mmaps\n"
+                 "mmap_unalign : test unalign mmap");
         } else if (!strcmp(cmd, "timestamp")) {
             struct Timestamp ts;
             get_timestamp(&ts);
@@ -110,6 +134,10 @@ int main() {
             test_command3();
         } else if (!strcmp(cmd, "mango")) {
             printf("%d\n", get_remain_mango_node_num());
+        } else if (!strcmp(cmd, "mmaps")) {
+            mmaps();
+        } else if (!strcmp(cmd, "mmap_unalign")) {
+            mmap_unalign();
         } else {
             printf("Err: command %s not found, try <help>\n", cmd);
         }

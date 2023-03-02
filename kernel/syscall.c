@@ -9,6 +9,7 @@
 #include <include/mutex.h>
 #include <include/spinlock.h>
 #include <include/spinlock_types.h>
+#include <include/mmap.h>
 
 void syscall_handler(struct TrapFrame *tf) {
     uint64_t nr = tf->x[8];
@@ -59,6 +60,10 @@ void syscall_handler(struct TrapFrame *tf) {
             break;
         case SYS_get_remain_mango_node_num:
             ret = sys_get_remain_mango_node_num();
+            break;
+        case SYS_mmap:
+            ret = (int64_t)sys_mmap((void *)tf->x[0], (size_t)tf->x[1], (mmap_prot_t)tf->x[2],
+                (mmap_flags_t)tf->x[3], (void *)tf->x[4], (off_t)tf->x[5]);
             break;
         default:
     }
@@ -137,4 +142,8 @@ size_t sys_get_remain_mango_node_num() {
     spin_unlock(&mango_lock);
 
     return ret;
+}
+
+void* sys_mmap(void *addr, size_t len, mmap_prot_t prot, mmap_flags_t flags, void *file_start, off_t file_offset) {
+    return do_mmap(addr, len, prot, flags, file_start, file_offset);
 }

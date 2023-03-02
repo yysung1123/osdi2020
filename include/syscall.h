@@ -5,6 +5,7 @@
 #include <include/types.h>
 #include <include/mutex.h>
 #include <include/syscall_test.h>
+#include <include/mmap.h>
 
 enum {
     SYS_uart_read = 0,
@@ -20,7 +21,8 @@ enum {
     SYS_mutex,
     SYS_test,
     SYS_get_remain_page_num,
-    SYS_get_remain_mango_node_num
+    SYS_get_remain_mango_node_num,
+    SYS_mmap
 };
 
 void syscall_handler(struct TrapFrame *);
@@ -39,6 +41,7 @@ int64_t mutex(struct mutex *, int32_t);
 int64_t test(int32_t);
 size_t get_remain_page_num();
 size_t get_remain_mango_node_num();
+void* mmap(void *, size_t, mmap_prot_t, mmap_flags_t, void *, off_t);
 
 int64_t sys_uart_read(char *, size_t);
 int64_t sys_uart_write(const char *, size_t);
@@ -54,3 +57,4 @@ int64_t sys_mutex(struct mutex *, MUTEX_OP);
 int64_t sys_test(TEST_OP);
 size_t sys_get_remain_page_num();
 size_t sys_get_remain_mango_node_num();
+void* sys_mmap(void *, size_t, mmap_prot_t, mmap_flags_t, void *, off_t);
