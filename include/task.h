@@ -70,9 +70,6 @@ int32_t privilege_task_create(void(*func)());
 int32_t privilege_task_create_priority(void(*func)(), Priority);
 void context_switch(task_t *);
 task_t* get_task(pid_t);
-void task1();
-void task2();
-void task3();
 void runqueue_push(struct list_head *, task_t *);
 task_t* runqueue_pop(struct list_head *);
 bool runqueue_empty(struct list_head *);
@@ -90,6 +87,7 @@ pid_t do_wait();
 uint32_t num_runnable_tasks();
 void setpriority(pid_t, Priority);
 Priority getpriority(pid_t);
+void idle();
 
 static inline task_t* get_current() {
     task_t *res;

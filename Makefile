@@ -32,6 +32,7 @@ clean:
 	rm -rf $(OBJDIR)/lib/*.o
 	rm -rf $(OBJDIR)/user/*.o
 	rm -rf $(OBJDIR)/kernel8*.img
+	rm -rf $(OBJDIR)/user/*.bin
 
 qemu: all
 	$(QEMU) -M raspi3b -kernel kernel8.img -display none -serial pty
