@@ -2,14 +2,15 @@
 
 #include <include/types.h>
 #include <include/wait.h>
+#include <include/atomic.h>
 
 struct mutex {
-    volatile uint64_t owner;
+    atomic_t owner;
     struct wait_queue_head wq;
 };
 
 #define __MUTEX_INITIALIZER(lockname) \
-    { .owner = 0, \
+    { .owner = ATOMIC_INIT(0), \
       .wq = __WAIT_QUEUE_HEAD_INITIALIZER(lockname.wq) }
 
 #define DEFINE_MUTEX(mutexname) \

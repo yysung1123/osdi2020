@@ -1,38 +1,26 @@
 #include <include/mutex.h>
-#include <include/irq.h>
 #include <include/task.h>
 #include <include/types.h>
-#include <include/preempt.h>
 #include <include/wait.h>
+#include <include/atomic.h>
+#include <include/compiler.h>
 
 int64_t mutex_lock(struct mutex *mtx) {
-    // Preemptive kernel & UP: do not require any lock
-    // should be an atomic test-and-set-lock to protect critical section in SMP
-    int64_t error = 0;
-    preempt_disable();
-
     task_t *cur = get_current();
+    int64_t error = wait_event_interruptible(mtx->wq, atomic_compare_and_swap(&mtx->owner, 0, (uint64_t)cur));
 
-    error = wait_event_interruptible(mtx->wq, (mtx->owner == 0));
-    if (error) goto finish;
-
-    WRITE_ONCE(mtx->owner, (uint64_t)cur);
-
-finish:
-    preempt_enable();
+    barrier();
     return error;
 }
 
 int64_t mutex_unlock(struct mutex *mtx) {
-    preempt_disable();
+    barrier();
 
     task_t *cur = get_current();
-    if (mtx->owner == (uint64_t)cur) {
-        mtx->owner = 0;
+    if (atomic_read(&mtx->owner) == (uint64_t)cur) {
+        atomic_set(0, &mtx->owner);
         wake_up_interruptible(&mtx->wq);
     }
-
-    preempt_enable();
 
     return 0;
 }

@@ -30,7 +30,8 @@ el1_start:
 // set up MAIR_EL1
   ldr x0, =( \
     (MAIR_DEVICE_nGnRnE << (MAIR_IDX_DEVICE_nGnRnE * 8)) | \
-    (MAIR_NORMAL_NOCACHE << (MAIR_IDX_NORMAL_NOCACHE * 8)) \
+    (MAIR_NORMAL_NOCACHE << (MAIR_IDX_NORMAL_NOCACHE * 8)) | \
+    (MAIR_NORMAL << (MAIR_IDX_NORMAL * 8)) \
   )
   msr MAIR_EL1, x0
 // set up finer granularity kernel mapping

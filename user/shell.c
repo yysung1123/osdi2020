@@ -201,6 +201,31 @@ void test_bss() {
     }
 }
 
+void  __attribute__((optimize("O0"))) test_mutex() {
+    if (fork() == 0) {
+        pid_t pid1, pid2, pid3;
+        pid1 = fork();
+        pid2 = fork();
+        pid3 = fork();
+
+        test(MUTEX);
+
+        if (!pid3) goto exit;
+        wait();
+
+        if (!pid2) goto exit;
+        wait();
+
+        if (!pid1) goto exit;
+        wait();
+
+exit:
+        exit(0);
+    } else {
+        wait();
+    }
+}
+
 int main() {
     const size_t CMD_SIZE = 1024;
     char cmd[CMD_SIZE];
@@ -228,7 +253,8 @@ int main() {
                  "mmap_unalign : test unalign mmap\n"
                  "wt : write text\n"
                  "data : test data section\n"
-                 "bss : test bss section");
+                 "bss : test bss section\n"
+                 "mtx : test mutex");
         } else if (!strcmp(cmd, "timestamp")) {
             struct Timestamp ts;
             get_timestamp(&ts);
@@ -265,6 +291,8 @@ int main() {
             test_data();
         } else if (!strcmp(cmd, "bss")) {
             test_bss();
+        } else if (!strcmp(cmd, "mtx")) {
+            test_mutex();
         } else {
             printf("Err: command %s not found, try <help>\n", cmd);
         }
