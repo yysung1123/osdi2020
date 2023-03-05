@@ -5,6 +5,7 @@
 #include <include/assert.h>
 
 #define MEMSIZE (1 << 30) // 1GB RAM
+#define USERTOP 0x0000ffffffffffff
 #define KERNBASE 0xffff000000000000
 #define NPAGES (MEMSIZE / PAGE_SIZE)
 

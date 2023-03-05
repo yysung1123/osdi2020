@@ -74,7 +74,7 @@ void copy_mm(mm_struct *dst, mm_struct *src) {
 
 void mm_init(mm_struct *mm) {
     mm_alloc_pgd(mm);
-    mm->mt = mtree_init_ts(0, UULONG_MAX);
+    mm->mt = mtree_init_ts(0, USERTOP);
 }
 
 void mm_destroy(mm_struct *mm) {

@@ -147,17 +147,17 @@ struct mango_node* mt_alloc_one(struct mango_tree *mt, uint64_t first, uint64_t 
 struct mango_node* mt_find(struct mango_tree *mt, uint64_t index) {
     struct mango_node *node = mt->ma_root;
 
+    if (!node) return NULL;
+
 descend:
-    if (node->left && node->index > index) {
+    if (node->index <= index && index <= node->last) {
+        return node;
+    } else if (node->left && node->index > index) {
         node = node->left;
         goto descend;
     } else if (node->right && node->last < index) {
         node = node->right;
         goto descend;
-    }
-
-    if (node->index <= index && index <= node->last) {
-        return node;
     }
 
     return NULL;
@@ -238,6 +238,10 @@ merge:
 }
 
 int32_t mtree_empty_area(struct mango_tree *mt, uint64_t min, uint64_t max, uint64_t size, uint64_t *start) {
+    if (min > max) return -E_INVAL;
+    if (min > mt->max - size + 1) return -E_INVAL;
+    max = MIN(max, mt->max - size + 1);
+
     int32_t ret = 0;
 
     // l: [0, min), mid: [min, max), r: [max, inf)
@@ -294,6 +298,9 @@ void mango_test() {
     struct mango_tree mt_instance = mtree_init(0, 0, UULONG_MAX);
     struct mango_tree *mt = &mt_instance;
     struct mango_node *node;
+
+    // test empty mtree mt_find
+    assert(mt_find(mt, 0) == NULL);
 
     // test mtree_empty_area before inserting nodes
     for (uint64_t i = 0; i < 20; ++i) {
