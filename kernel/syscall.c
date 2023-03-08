@@ -58,9 +58,6 @@ void syscall_handler(struct TrapFrame *tf) {
         case SYS_get_remain_page_num:
             ret = sys_get_remain_page_num();
             break;
-        case SYS_get_remain_mango_node_num:
-            ret = sys_get_remain_mango_node_num();
-            break;
         case SYS_mmap:
             ret = (int64_t)sys_mmap((void *)tf->x[0], (size_t)tf->x[1], (mmap_prot_t)tf->x[2],
                 (mmap_flags_t)tf->x[3], (void *)tf->x[4], (off_t)tf->x[5]);
@@ -129,17 +126,6 @@ size_t sys_get_remain_page_num() {
     uint64_t flags = spin_lock_irqsave(&page_lock);
     size_t ret = npages;
     spin_unlock_irqrestore(&page_lock, flags);
-
-    return ret;
-}
-
-size_t sys_get_remain_mango_node_num() {
-    extern size_t n_mango_nodes;
-    extern spinlock_t mango_lock;
-
-    spin_lock(&mango_lock);
-    size_t ret = READ_ONCE(n_mango_nodes);
-    spin_unlock(&mango_lock);
 
     return ret;
 }

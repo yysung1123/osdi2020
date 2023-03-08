@@ -85,3 +85,7 @@ struct list_head {
 };
 
 typedef uint64_t sigset_t;
+
+typedef struct {
+    int64_t counter;
+} __attribute__ ((aligned (8))) atomic_t;

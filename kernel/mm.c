@@ -16,21 +16,12 @@
 #include <include/assert.h>
 #include <include/error.h>
 #include <include/buddy.h>
+#include <include/slab.h>
 
 static kernaddr_t nextfree; // virtual address of next byte of free memory
 static page_t *pages;
 size_t npages;
 struct buddy_system buddy_system;
-
-LIST_HEAD(mango_node_free_list);
-static struct mango_node *mango_nodes;
-spinlock_t mango_lock;
-size_t n_mango_nodes;
-
-LIST_HEAD(vma_free_list);
-static struct vm_area_struct *vmas;
-spinlock_t vma_lock;
-size_t nvmas;
 
 kernaddr_t boot_alloc(uint32_t n) {
     kernaddr_t result;
@@ -54,13 +45,9 @@ void mem_init() {
     pl011_uart_printk_polling("%p\n", boot_alloc(0));
 
     pages = (page_t *)boot_alloc(sizeof(page_t) * NPAGES);
-    mango_nodes = (struct mango_node *)boot_alloc(sizeof(struct mango_node) * N_MANGO_NODES);
-    vmas = (struct vm_area_struct *)boot_alloc(sizeof(struct vm_area_struct) * NVMAS);
     memset(pages, 0, sizeof(page_t) * NPAGES);
 
     buddy_init();
-    mango_node_init();
-    vma_init();
 }
 
 static inline void add_to_free_list(page_t *pp, struct buddy_system *buddy_system, uint8_t order) {
@@ -468,70 +455,4 @@ void copy_pgd(mm_struct *dst_mm, mm_struct *src_mm) {
             copy_pud(pgd_pgtable(dst), pgd_pgtable(src));
         }
     }
-}
-
-void mango_node_init() {
-    for (size_t idx = 0; idx < N_MANGO_NODES; ++idx) {
-        list_add(&mango_nodes[idx].alloc_link, &mango_node_free_list);
-    }
-
-    n_mango_nodes = N_MANGO_NODES;
-}
-
-struct mango_node* mango_node_alloc() {
-    struct mango_node *node = NULL;
-    spin_lock(&mango_lock);
-    if (list_empty(&mango_node_free_list)) goto unlock;
-
-    node = list_first_entry(&mango_node_free_list, struct mango_node, alloc_link);
-    list_del_init(&node->alloc_link);
-
-    --n_mango_nodes;
-
-unlock:
-    spin_unlock(&mango_lock);
-
-    return node;
-}
-
-void mango_node_free(struct mango_node *node) {
-    spin_lock(&mango_lock);
-    if (!list_empty(&node->alloc_link)) panic("mango_node_free error");
-
-    list_add(&node->alloc_link, &mango_node_free_list);
-    ++n_mango_nodes;
-    spin_unlock(&mango_lock);
-}
-
-void vma_init() {
-    for (size_t idx = 0; idx < NVMAS; ++idx) {
-        list_add(&vmas[idx].alloc_link, &vma_free_list);
-    }
-
-    nvmas = NVMAS;
-}
-
-struct vm_area_struct* vma_alloc() {
-    struct vm_area_struct *vma = NULL;
-    spin_lock(&vma_lock);
-    if (list_empty(&vma_free_list)) goto unlock;
-
-    vma = list_first_entry(&vma_free_list, struct vm_area_struct, alloc_link);
-    list_del_init(&vma->alloc_link);
-
-    --nvmas;
-
-unlock:
-    spin_unlock(&vma_lock);
-
-    return vma;
-}
-
-void vma_free(struct vm_area_struct *vma) {
-    spin_lock(&vma_lock);
-    if (!list_empty(&vma->alloc_link)) panic("vma_free error");
-
-    list_add(&vma->alloc_link, &vma_free_list);
-    ++nvmas;
-    spin_unlock(&vma_lock);
 }

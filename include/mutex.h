@@ -2,7 +2,6 @@
 
 #include <include/types.h>
 #include <include/wait.h>
-#include <include/atomic.h>
 
 struct mutex {
     atomic_t owner;

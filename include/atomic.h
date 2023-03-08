@@ -2,10 +2,6 @@
 
 #include <include/types.h>
 
-typedef struct {
-    int64_t counter;
-} __attribute__ ((aligned (8))) atomic_t;
-
 #define ATOMIC_INIT(i) { (i) }
 
 static inline void atomic_add(int64_t i, atomic_t *v) {

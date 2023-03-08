@@ -16,7 +16,6 @@ struct mango_tree {
 struct mango_node {
     struct mango_node *parent;
     struct mango_node *left, *right;
-    struct list_head alloc_link;
     uint64_t pri;
     uint64_t index, last;
     uint64_t gap;

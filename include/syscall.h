@@ -21,7 +21,6 @@ enum {
     SYS_mutex,
     SYS_test,
     SYS_get_remain_page_num,
-    SYS_get_remain_mango_node_num,
     SYS_mmap
 };
 
@@ -40,7 +39,6 @@ int32_t wait();
 int64_t mutex(struct mutex *, int32_t);
 int64_t test(int32_t);
 size_t get_remain_page_num();
-size_t get_remain_mango_node_num();
 void* mmap(void *, size_t, mmap_prot_t, mmap_flags_t, void *, off_t);
 
 int64_t sys_uart_read(char *, size_t);
@@ -56,5 +54,4 @@ int64_t sys_wait();
 int64_t sys_mutex(struct mutex *, MUTEX_OP);
 int64_t sys_test(TEST_OP);
 size_t sys_get_remain_page_num();
-size_t sys_get_remain_mango_node_num();
 void* sys_mmap(void *, size_t, mmap_prot_t, mmap_flags_t, void *, off_t);

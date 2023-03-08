@@ -3,7 +3,7 @@
 #include <include/pgtable-types.h>
 #include <include/spinlock_types.h>
 #include <include/mango_tree.h>
-#include <include/list.h>
+#include <include/types.h>
 
 typedef struct {
     pgd_t *pgd;
@@ -16,7 +16,6 @@ struct vm_area_struct {
     virtaddr_t vm_end;
     mm_struct *vm_mm;
     pgprot_t vm_page_prot;
-    struct list_head alloc_link;
 };
 
 struct page_t {
@@ -26,5 +25,3 @@ struct page_t {
 };
 
 typedef struct page_t page_t;
-
-#define NVMAS 4096
