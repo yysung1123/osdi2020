@@ -19,4 +19,12 @@ struct vm_area_struct {
     struct list_head alloc_link;
 };
 
+struct page_t {
+    struct list_head buddy_list;
+    atomic_t pp_ref;
+    uint64_t private;
+};
+
+typedef struct page_t page_t;
+
 #define NVMAS 4096

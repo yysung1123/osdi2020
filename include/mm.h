@@ -9,18 +9,15 @@
 #include <include/mango_tree.h>
 #include <include/pgtable-hwdef.h>
 
-typedef struct page_t page_t;
-struct page_t {
-    struct list_head pp_link;
-    atomic_t pp_ref;
-};
-
 enum {
     ALLOC_ZERO = 1 << 0,
 };
 
 void mem_init();
 kernaddr_t boot_alloc(uint32_t);
+void buddy_init();
+page_t* buddy_alloc(uint8_t);
+void buddy_free(page_t *);
 void page_init();
 page_t* page_alloc(uint32_t);
 void page_free(page_t *);

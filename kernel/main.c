@@ -12,9 +12,9 @@ int main() {
     pl011_uart_init();
     fb_init();
     fb_show_splash_image();
+    mem_init();
     task_init();
     core_timer_init();
-    mem_init();
 
     // lab5 required 3
     privilege_task_create(&user_shell);

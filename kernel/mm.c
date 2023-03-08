@@ -15,12 +15,12 @@
 #include <include/atomic.h>
 #include <include/assert.h>
 #include <include/error.h>
+#include <include/buddy.h>
 
 static kernaddr_t nextfree; // virtual address of next byte of free memory
-LIST_HEAD(page_free_list); // free list of physical pages
 static page_t *pages;
-spinlock_t page_lock;
 size_t npages;
+struct buddy_system buddy_system;
 
 LIST_HEAD(mango_node_free_list);
 static struct mango_node *mango_nodes;
@@ -51,8 +51,6 @@ kernaddr_t boot_alloc(uint32_t n) {
 }
 
 void mem_init() {
-    npages = 0;
-
     pl011_uart_printk_polling("%p\n", boot_alloc(0));
 
     pages = (page_t *)boot_alloc(sizeof(page_t) * NPAGES);
@@ -60,54 +58,110 @@ void mem_init() {
     vmas = (struct vm_area_struct *)boot_alloc(sizeof(struct vm_area_struct) * NVMAS);
     memset(pages, 0, sizeof(page_t) * NPAGES);
 
-    page_init();
+    buddy_init();
     mango_node_init();
     vma_init();
-
-    pgtable_test();
 }
 
-void page_init() {
-    extern char _KERNEL_START[];
-    for (size_t i = 0; i < NPAGES; ++i) {
-        if ((PADDR((kernaddr_t)_KERNEL_START) / PAGE_SIZE <= i && i < PADDR(nextfree) / PAGE_SIZE) ||
-            (PADDR((kernaddr_t)PERIPHERAL_BASE) / PAGE_SIZE <= i && i <= PADDR((kernaddr_t)PERIPHERAL_END) / PAGE_SIZE)) {
-            atomic_set(1, &pages[i].pp_ref);
-        } else {
-            atomic_set(0, &pages[i].pp_ref);
-            list_add(&pages[i].pp_link, &page_free_list);
-            ++npages;
-        }
+static inline void add_to_free_list(page_t *pp, struct buddy_system *buddy_system, uint8_t order) {
+    list_add(&pp->buddy_list, &buddy_system->free_area[order].free_list);
+    buddy_system->free_area[order].nr_free++;
+}
+
+static inline void del_page_from_free_list(page_t *pp, struct buddy_system *buddy_system, uint8_t order) {
+    list_del_init(&pp->buddy_list);
+    buddy_system->free_area[order].nr_free--;
+}
+
+static inline uint8_t buddy_order(uint64_t addr) {
+    assert(addr >= PAGE_SIZE);
+    return __builtin_ctz(addr >> PAGE_SHIFT);
+}
+
+static inline page_t* buddy_find(page_t *pp, uint8_t order) {
+    return pa2page(page2pa(pp) ^ (1ull << (order + PAGE_SHIFT)));
+}
+
+void buddy_init() {
+    for (uint8_t order = 0; order < MAX_ORDER; ++order) {
+        INIT_LIST_HEAD(&buddy_system.free_area[order].free_list);
+    }
+
+    for (size_t idx = 0; idx < NPAGES; ++idx) {
+        INIT_LIST_HEAD(&pages[idx].buddy_list);
+    }
+
+    physaddr_t next_buddy_addr = PADDR(nextfree);
+    const physaddr_t peripheral_base_phys = PADDR((kernaddr_t)PERIPHERAL_BASE);
+    while (next_buddy_addr < peripheral_base_phys) {
+        uint8_t order = MIN(MAX_ORDER - 1, MIN(31 - __builtin_clz(peripheral_base_phys - next_buddy_addr) - PAGE_SHIFT, buddy_order(next_buddy_addr)));
+        page_t *pp = pa2page(next_buddy_addr);
+        pp->private = (uint64_t)order;
+        add_to_free_list(pp, &buddy_system, order);
+        next_buddy_addr += 1ull << (order + PAGE_SHIFT);
     }
 }
 
-page_t* page_alloc(uint32_t alloc_flags) {
-    page_t *pp = NULL;
-    uint64_t flags = spin_lock_irqsave(&page_lock);
-    if (list_empty(&page_free_list)) goto unlock;
+page_t* buddy_alloc(uint8_t order) {
+    uint64_t flags = spin_lock_irqsave(&buddy_system.lock);
+    page_t *ret = NULL;
 
-    pp = list_first_entry(&page_free_list, page_t, pp_link);
-    list_del_init(&pp->pp_link);
+    uint8_t order_found = order;
+    for (; order_found < MAX_ORDER; ++order_found) {
+        if (!list_empty(&buddy_system.free_area[order_found].free_list)) break;
+    }
+    if (order_found == MAX_ORDER) goto unlock;
+
+    page_t *pp = list_first_entry(&buddy_system.free_area[order_found].free_list, page_t, buddy_list);
+    while (order_found > order) {
+        --order_found;
+        page_t *buddy = buddy_find(pp, order_found);
+        del_page_from_free_list(pp, &buddy_system, order_found + 1);
+        pp->private = buddy->private = (uint64_t)order_found;
+        add_to_free_list(pp, &buddy_system, order_found);
+        add_to_free_list(buddy, &buddy_system, order_found);
+    }
+    del_page_from_free_list(pp, &buddy_system, order);
+    pp->private = (uint64_t)order;
+    ret = pp;
+
+unlock:
+    spin_unlock_irqrestore(&buddy_system.lock, flags);
+    return ret;
+}
+
+void buddy_free(page_t *pp) {
+    uint64_t flags = spin_lock_irqsave(&buddy_system.lock);
+
+    uint8_t order = (uint8_t)pp->private;
+    for (; order < MAX_ORDER - 1; ++order) {
+        page_t *buddy = buddy_find(pp, order);
+        if (!list_empty(&buddy->buddy_list) && (uint8_t)buddy->private == order) {
+            del_page_from_free_list(buddy, &buddy_system, order);
+        } else {
+            break;
+        }
+    }
+
+    pp->private = (uint8_t)order;
+    add_to_free_list(pp, &buddy_system, order);
+
+    spin_unlock_irqrestore(&buddy_system.lock, flags);
+}
+
+page_t* page_alloc(uint32_t alloc_flags) {
+    page_t *pp = buddy_alloc(0);
+    if (!pp) return NULL;
 
     if (alloc_flags & ALLOC_ZERO) {
         memset((void *)page2kva(pp), 0, PAGE_SIZE);
     }
 
-    --npages;
-
-unlock:
-    spin_unlock_irqrestore(&page_lock, flags);
-
     return pp;
 }
 
 void page_free(page_t *pp) {
-    uint64_t flags = spin_lock_irqsave(&page_lock);
-    if (atomic_read(&pp->pp_ref) != 0 || !list_empty(&pp->pp_link)) panic("page_free error");
-
-    list_add(&pp->pp_link, &page_free_list);
-    ++npages;
-    spin_unlock_irqrestore(&page_lock, flags);
+    buddy_free(pp);
 }
 
 void page_decref(page_t *pp) {
