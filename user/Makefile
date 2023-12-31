@@ -1,4 +1,4 @@
-UCFLAGS = -mcpu=cortex-a53 -std=c17 -O3 -Wall -nostdinc -fno-builtin -I.
+UCFLAGS = -mcpu=cortex-a53 -std=c17 -O3 -Wall -nostdinc -fno-builtin -fno-stack-protector -I.
 
 ULIB = lib/printfmt.o \
 	lib/string.o \
