@@ -8,7 +8,7 @@
 #include <include/asm/tlbflush.h>
 #include <include/memory.h>
 #include <include/mm.h>
-#include <include/slab.h>
+#include <include/kmalloc.h>
 
 void* do_mmap(void *addr, size_t len, mmap_prot_t prot, mmap_flags_t flags, void *file_start, off_t file_offset) {
     task_t *cur = get_current();
@@ -44,8 +44,7 @@ void* do_mmap(void *addr, size_t len, mmap_prot_t prot, mmap_flags_t flags, void
     virtaddr_t first = (virtaddr_t)addr;
     virtaddr_t last = (virtaddr_t)addr + len - 1;
 
-    extern struct slab slab_vma;
-    struct vm_area_struct *vma = slab_alloc(&slab_vma);
+    struct vm_area_struct *vma = kmalloc(sizeof(struct vm_area_struct));
     if (vma == NULL) {
         return (void *)-1;
     }

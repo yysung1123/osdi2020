@@ -5,9 +5,7 @@
 #include <include/printk.h>
 #include <include/limits.h>
 #include <include/pgtable-hwdef.h>
-#include <include/slab.h>
-
-static DEFINE_SLAB(mango_node_slab, sizeof(struct mango_node));
+#include <include/kmalloc.h>
 
 static inline void mango_pull_gap(struct mango_node *node) {
     uint64_t max = node->gap;
@@ -111,7 +109,7 @@ void mango_node_destroy(struct mango_node *node) {
     mango_node_destroy(node->left);
     mango_node_destroy(node->right);
 
-    slab_free(&mango_node_slab, node);
+    kfree(node);
 }
 
 struct mango_node* mango_next(struct mango_node *node) {
@@ -134,7 +132,7 @@ int32_t mango_tree_rand(struct mango_tree *mt) {
 }
 
 struct mango_node* mt_alloc_one(struct mango_tree *mt, uint64_t first, uint64_t last, void *entry) {
-    struct mango_node *node = slab_alloc(&mango_node_slab);
+    struct mango_node *node = kmalloc(sizeof(struct mango_node));
 
     node->parent = node->left = node->right = NULL;
     node->gap = 0;

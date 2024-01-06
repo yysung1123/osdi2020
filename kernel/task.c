@@ -19,20 +19,19 @@
 #include <include/elf.h>
 #include <include/mmap.h>
 #include <include/asm/memory.h>
-#include <include/slab.h>
+#include <include/kmalloc.h>
 
 static task_t task_pool[NR_TASKS];
 static uint8_t kstack_pool[NR_TASKS][THREAD_SIZE] __attribute__ ((aligned (PAGE_SIZE)));
 struct list_head rq[NUM_PRIORITY];
 spinlock_t rq_lock;
 spinlock_t task_pool_lock;
-DEFINE_SLAB(slab_vma, (sizeof(struct vm_area_struct)));
 
 void mtree_free(struct mango_tree *mt) {
     struct mango_node *node;
     mt_for_each(mt, node) {
         if (node->entry) {
-            slab_free(&slab_vma, node->entry);
+            kfree(node->entry);
         }
     }
 
@@ -50,7 +49,7 @@ void copy_mm(mm_struct *dst, mm_struct *src) {
         struct vm_area_struct *new_vma = NULL;
         if (node->entry) {
             struct vm_area_struct *vma = node->entry;
-            new_vma = slab_alloc(&slab_vma);
+            new_vma = kmalloc(sizeof(struct vm_area_struct));
             if (new_vma == NULL) {
                 panic("vma_alloc error");
             }

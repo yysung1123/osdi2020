@@ -52,7 +52,7 @@ void kfree(void *addr) {
 }
 
 void kmalloc_test() {
-    const size_t test_cases[5] = {268435456, 4096, 2048, 2047, 2};
+    const size_t test_cases[5] = {1 << 28, 1 << 12, 1 << 11, 2047, 2};
     void *ptr;
     for (int i = 0; i < 5; ++i) {
         ptr = kmalloc(test_cases[i]);
