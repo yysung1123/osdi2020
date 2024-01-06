@@ -21,8 +21,8 @@
 #include <include/asm/memory.h>
 #include <include/kmalloc.h>
 
-static task_t task_pool[NR_TASKS];
-static uint8_t kstack_pool[NR_TASKS][THREAD_SIZE] __attribute__ ((aligned (PAGE_SIZE)));
+static task_t *task_pool;
+static uint8_t **kstack_pool; // should align with PAGE_SIZE
 struct list_head rq[NUM_PRIORITY];
 spinlock_t rq_lock;
 spinlock_t task_pool_lock;
@@ -84,6 +84,9 @@ void mm_destroy(mm_struct *mm) {
 }
 
 void task_init() {
+    task_pool = kmalloc(sizeof(task_t) * NR_TASKS);
+    kstack_pool = kmalloc(MAX(THREAD_SIZE * NR_TASKS, PAGE_SIZE));
+
     for (pid_t i = 0; i < NR_TASKS; ++i) {
         memset(&(task_pool[i]), 0, sizeof(task_t));
         task_pool[i].state = TASK_FREE;
@@ -259,7 +262,7 @@ pid_t do_get_taskid() {
 }
 
 uint8_t* get_kstacktop_by_id(pid_t id) {
-    return ((uint8_t *)&kstack_pool + (id + 1) * THREAD_SIZE);
+    return ((uint8_t *)kstack_pool + (id + 1) * THREAD_SIZE);
 }
 
 pid_t do_fork(struct TrapFrame *tf) {
@@ -283,7 +286,7 @@ pid_t do_fork(struct TrapFrame *tf) {
 
     // copy user context
     copy_mm(&ts_new->mm, &cur->mm);
-    *tf_new = *tf;
+    memcpy(tf_new, tf, sizeof(struct TrapFrame));
     // child's return value is 0
     tf_new->x[0] = 0;
 
