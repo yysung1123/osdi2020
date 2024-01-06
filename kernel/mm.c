@@ -17,6 +17,7 @@
 #include <include/error.h>
 #include <include/buddy.h>
 #include <include/slab.h>
+#include <include/kmalloc.h>
 
 static kernaddr_t nextfree; // virtual address of next byte of free memory
 static page_t *pages;
@@ -48,6 +49,7 @@ void mem_init() {
     memset(pages, 0, sizeof(page_t) * NPAGES);
 
     buddy_init();
+    kmalloc_init();
 }
 
 static inline void add_to_free_list(page_t *pp, struct buddy_system *buddy_system, uint8_t order) {
@@ -143,6 +145,8 @@ page_t* page_alloc(uint32_t alloc_flags) {
     if (alloc_flags & ALLOC_ZERO) {
         memset((void *)page2kva(pp), 0, PAGE_SIZE);
     }
+
+    pp->slab_cache = NULL;
 
     return pp;
 }

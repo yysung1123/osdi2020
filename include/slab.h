@@ -32,3 +32,4 @@ struct slab {
 
 void *slab_alloc(struct slab *);
 void slab_free(struct slab *, void *);
+void slab_init(struct slab *, size_t size);

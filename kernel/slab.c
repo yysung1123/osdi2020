@@ -10,6 +10,7 @@ void *slab_alloc(struct slab *slab) {
 
     if (list_empty(&slab->free_list)) {
         page_t *pp = buddy_alloc(0);
+        pp->slab_cache = slab;
         struct slab_page *slab_page = (struct slab_page *)page2kva(pp);
         list_add(&slab_page->list, &slab->page_list);
 
@@ -52,4 +53,10 @@ void slab_free(struct slab *slab, void *mem) {
     }
 
     spin_unlock_irqrestore(&slab->lock, flags);
+}
+
+void slab_init(struct slab *slab, size_t size) {
+    INIT_LIST_HEAD(&slab->page_list);
+    slab->object_size = size;
+    INIT_LIST_HEAD(&slab->free_list);
 }

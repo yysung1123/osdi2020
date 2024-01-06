@@ -21,7 +21,8 @@ KERN_OBJS = kernel/start.o \
 	kernel/syscall_test.o \
 	kernel/fault.o \
 	kernel/mmap.o \
-	kernel/slab.o
+	kernel/slab.o \
+	kernel/kmalloc.o
 
 ifeq ($(WITH_BMP_SPLASH),1)
 	KERN_OBJS += kernel/splash.o

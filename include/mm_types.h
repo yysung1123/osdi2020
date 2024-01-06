@@ -22,6 +22,7 @@ struct page_t {
     struct list_head buddy_list;
     atomic_t pp_ref;
     uint64_t private;
+    struct slab *slab_cache;
 };
 
 typedef struct page_t page_t;
